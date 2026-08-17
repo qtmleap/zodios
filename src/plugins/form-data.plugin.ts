@@ -1,17 +1,14 @@
-import { getFormDataStream } from "./form-data.utils";
-import { ZodiosError } from "../zodios-error";
-import type { ZodiosPlugin } from "../zodios.types";
+import type { ZodiosPlugin } from '../zodios.types'
+import { ZodiosError } from '../zodios-error'
+import { getFormDataStream } from './form-data.utils'
 
 const plugin: ZodiosPlugin = {
-  name: "form-data",
+  name: 'form-data',
   request: async (_, config) => {
-    if (typeof config.data !== "object" || Array.isArray(config.data)) {
-      throw new ZodiosError(
-        "Zodios: multipart/form-data body must be an object",
-        config
-      );
+    if (typeof config.data !== 'object' || Array.isArray(config.data)) {
+      throw new ZodiosError('Zodios: multipart/form-data body must be an object', config)
     }
-    const result = getFormDataStream(config.data as any);
+    const result = getFormDataStream(config.data as any)
     return {
       ...config,
       data: result.data,
@@ -19,9 +16,9 @@ const plugin: ZodiosPlugin = {
         ...config.headers,
         ...result.headers,
       },
-    };
+    }
   },
-};
+}
 
 /**
  * form-data plugin used internally by Zodios.
@@ -54,5 +51,5 @@ const plugin: ZodiosPlugin = {
  * @returns form-data plugin
  */
 export function formDataPlugin(): ZodiosPlugin {
-  return plugin;
+  return plugin
 }

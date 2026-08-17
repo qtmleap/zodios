@@ -1,6 +1,6 @@
-import { AxiosError } from "axios";
-import { findEndpointErrorsByAlias, findEndpointErrorsByPath } from "./utils";
-import {
+import { AxiosError } from 'axios'
+import { findEndpointErrorsByAlias, findEndpointErrorsByPath } from './utils'
+import type {
   Aliases,
   Method,
   ZodiosEndpointDefinitions,
@@ -8,27 +8,25 @@ import {
   ZodiosMatchingErrorsByAlias,
   ZodiosMatchingErrorsByPath,
   ZodiosPathsByMethod,
-} from "./zodios.types";
+} from './zodios.types'
 
 function isDefinedError(
   error: unknown,
-  findEndpointErrors: (error: AxiosError) => ZodiosEndpointError[] | undefined
+  findEndpointErrors: (error: AxiosError) => ZodiosEndpointError[] | undefined,
 ): boolean {
   if (
     error instanceof AxiosError ||
-    (error && typeof error === "object" && "isAxiosError" in error)
+    (error && typeof error === 'object' && 'isAxiosError' in error)
   ) {
-    const err = error as AxiosError;
+    const err = error as AxiosError
     if (err.response) {
-      const endpointErrors = findEndpointErrors(err);
+      const endpointErrors = findEndpointErrors(err)
       if (endpointErrors) {
-        return endpointErrors.some(
-          (desc) => desc.schema.safeParse(err.response!.data).success
-        );
+        return endpointErrors.some((desc) => desc.schema.safeParse(err.response!.data).success)
       }
     }
   }
-  return false;
+  return false
 }
 
 /**
@@ -42,22 +40,18 @@ function isDefinedError(
 export function isErrorFromPath<
   Api extends ZodiosEndpointDefinitions,
   M extends Method,
-  Path extends string
+  Path extends string,
 >(
   api: Api,
   method: M,
-  path: Path extends ZodiosPathsByMethod<Api, M>
-    ? Path
-    : ZodiosPathsByMethod<Api, M>,
-  error: unknown
+  path: Path extends ZodiosPathsByMethod<Api, M> ? Path : ZodiosPathsByMethod<Api, M>,
+  error: unknown,
 ): error is ZodiosMatchingErrorsByPath<
   Api,
   M,
   Path extends ZodiosPathsByMethod<Api, M> ? Path : never
 > {
-  return isDefinedError(error, (err) =>
-    findEndpointErrorsByPath(api, method, path, err)
-  );
+  return isDefinedError(error, (err) => findEndpointErrorsByPath(api, method, path, err))
 }
 
 /**
@@ -67,15 +61,10 @@ export function isErrorFromPath<
  * @param error - the error to check
  * @returns - if true, the error type is narrowed to the matching endpoint errors
  */
-export function isErrorFromAlias<
-  Api extends ZodiosEndpointDefinitions,
-  Alias extends string
->(
+export function isErrorFromAlias<Api extends ZodiosEndpointDefinitions, Alias extends string>(
   api: Api,
   alias: Alias extends Aliases<Api> ? Alias : Aliases<Api>,
-  error: unknown
+  error: unknown,
 ): error is ZodiosMatchingErrorsByAlias<Api, Alias> {
-  return isDefinedError(error, (err) =>
-    findEndpointErrorsByAlias(api, alias, err)
-  );
+  return isDefinedError(error, (err) => findEndpointErrorsByAlias(api, alias, err))
 }
