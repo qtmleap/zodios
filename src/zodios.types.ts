@@ -173,7 +173,7 @@ export type ErrorsToAxios<T, Acc extends unknown[] = []> = T extends [infer Head
       status: infer Status
       schema: infer Schema
     }
-    ? Schema extends z.ZodTypeAny
+    ? Schema extends z.ZodType
       ? ErrorsToAxios<
           Tail,
           [

@@ -239,17 +239,8 @@ describe('zodValidationPlugin', () => {
       ).rejects.toThrowError(`Zodios: Invalid response from endpoint 'post /parse'
 status: 200 OK
 cause:
-[
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "number",
-    "path": [
-      "first"
-    ],
-    "message": "Expected string, received number"
-  }
-]
+✖ Invalid input: expected string, received number
+  → at first
 received:
 {
   "first": 123,
