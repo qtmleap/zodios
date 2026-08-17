@@ -14,6 +14,7 @@ on:
       - package.json
       - tsconfig.json
       - biome.json
+      - .github/workflows/ci.yml
   pull_request:
     paths:
       - src/**
@@ -21,6 +22,7 @@ on:
       - package.json
       - tsconfig.json
       - biome.json
+      - .github/workflows/ci.yml
 
 jobs:
   build:
@@ -48,7 +50,10 @@ jobs:
           restore-keys: |
             bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      - run: bun run build
+      # tsdown needs Promise.withResolvers (Node 22+), so the build step runs on
+      # the Bun runtime. The tests below still run on the Node.js matrix, which
+      # is what actually exercises the supported runtimes.
+      - run: bun run --bun build
       - run: bun run test
 
   typecheck:
@@ -88,5 +93,11 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
+          # The express app in *.test.ts is a mock server that echoes request
+          # bodies back on purpose; scanning it only yields false positives
+          # such as js/reflected-xss.
+          config: |
+            paths-ignore:
+              - src/**/*.test.ts
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
