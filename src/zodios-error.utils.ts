@@ -1,4 +1,3 @@
-import { AxiosError } from 'axios'
 import { findEndpointErrorsByAlias, findEndpointErrorsByPath } from './utils'
 import type {
   Aliases,
@@ -9,21 +8,25 @@ import type {
   ZodiosMatchingErrorsByPath,
   ZodiosPathsByMethod,
 } from './zodios.types'
+import { ZodiosResponseError } from './zodios-error'
+
+function isResponseError(error: unknown): error is ZodiosResponseError {
+  // the duck check covers the case where the package is duplicated
+  // in the dependency tree and instanceof fails across realms
+  return (
+    error instanceof ZodiosResponseError ||
+    (error instanceof Error && error.name === 'ZodiosResponseError' && 'response' in error)
+  )
+}
 
 function isDefinedError(
   error: unknown,
-  findEndpointErrors: (error: AxiosError) => ZodiosEndpointError[] | undefined,
+  findEndpointErrors: (error: ZodiosResponseError) => ZodiosEndpointError[] | undefined,
 ): boolean {
-  if (
-    error instanceof AxiosError ||
-    (error && typeof error === 'object' && 'isAxiosError' in error)
-  ) {
-    const err = error as AxiosError
-    if (err.response) {
-      const endpointErrors = findEndpointErrors(err)
-      if (endpointErrors) {
-        return endpointErrors.some((desc) => desc.schema.safeParse(err.response!.data).success)
-      }
+  if (isResponseError(error)) {
+    const endpointErrors = findEndpointErrors(error)
+    if (endpointErrors) {
+      return endpointErrors.some((desc) => desc.schema.safeParse(error.response.data).success)
     }
   }
   return false

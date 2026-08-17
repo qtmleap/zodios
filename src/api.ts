@@ -124,24 +124,15 @@ class ParametersBuilder<T extends ZodiosEndpointParameter[]> {
     return this.addParameter('body', 'Body', schema)
   }
 
-  addQuery<Name extends string, Schema extends z.ZodType>(
-    name: Name,
-    schema: Schema,
-  ) {
+  addQuery<Name extends string, Schema extends z.ZodType>(name: Name, schema: Schema) {
     return this.addParameter(name, 'Query', schema)
   }
 
-  addPath<Name extends string, Schema extends z.ZodType>(
-    name: Name,
-    schema: Schema,
-  ) {
+  addPath<Name extends string, Schema extends z.ZodType>(name: Name, schema: Schema) {
     return this.addParameter(name, 'Path', schema)
   }
 
-  addHeader<Name extends string, Schema extends z.ZodType>(
-    name: Name,
-    schema: Schema,
-  ) {
+  addHeader<Name extends string, Schema extends z.ZodType>(name: Name, schema: Schema) {
     return this.addParameter(name, 'Header', schema)
   }
 

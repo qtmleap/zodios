@@ -1,5 +1,3 @@
-/// <reference lib="dom" />
-
 /**
  * getFormDataStream
  * @param data - the data to be encoded as form data stream

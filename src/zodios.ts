@@ -1,6 +1,5 @@
-import type { AxiosInstance } from 'axios'
-import axios from 'axios'
 import { checkApi } from './api'
+import { fetchRequest } from './fetcher'
 import {
   formDataPlugin,
   formURLPlugin,
@@ -33,10 +32,10 @@ import type {
 } from './zodios.types'
 
 /**
- * zodios api client based on axios
+ * zodios api client based on fetch
  */
 export class ZodiosClass<Api extends ZodiosEndpointDefinitions> {
-  private axiosInstance: AxiosInstance
+  readonly #baseURL: string | undefined
   public readonly options: PickRequired<ZodiosOptions, 'validate' | 'transform' | 'sendDefaults'>
   public readonly api: Api
   private endpointPlugins: Map<string, ZodiosPlugins> = new Map()
@@ -99,14 +98,7 @@ export class ZodiosClass<Api extends ZodiosEndpointDefinitions> {
       ...options,
     }
 
-    if (this.options.axiosInstance) {
-      this.axiosInstance = this.options.axiosInstance
-    } else {
-      this.axiosInstance = axios.create({
-        ...this.options.axiosConfig,
-      })
-    }
-    if (baseURL) this.axiosInstance.defaults.baseURL = baseURL
+    this.#baseURL = baseURL
 
     this.injectAliasEndpoints()
     this.initPlugins()
@@ -158,14 +150,7 @@ export class ZodiosClass<Api extends ZodiosEndpointDefinitions> {
    * get the base url of the api
    */
   get baseURL() {
-    return this.axiosInstance.defaults.baseURL
-  }
-
-  /**
-   * get the underlying axios instance
-   */
-  get axios() {
-    return this.axiosInstance
+    return this.#baseURL
   }
 
   /**
@@ -258,22 +243,32 @@ export class ZodiosClass<Api extends ZodiosEndpointDefinitions> {
     if (endpointPlugin) {
       conf = await endpointPlugin.interceptRequest(this.api, conf)
     }
-    let response = this.axiosInstance.request({
-      ...omit(conf as AnyZodiosRequestOptions, ['params', 'queries']),
-      url: replacePathParams(conf),
-      params: conf.queries,
-    })
+    let response = fetchRequest(
+      {
+        ...omit(conf as AnyZodiosRequestOptions, ['params']),
+        url: replacePathParams(conf),
+      },
+      {
+        baseURL: this.#baseURL,
+        fetch: this.options.fetch,
+        defaults: this.options.fetchOptions,
+      },
+    )
     if (endpointPlugin) {
       response = endpointPlugin.interceptResponse(this.api, conf, response)
     }
     response = anyPlugin.interceptResponse(this.api, conf, response)
-    return (await response).data
+    return (await response).data as ZodiosResponseByPath<
+      Api,
+      M,
+      Path extends ZodiosPathsByMethod<Api, M> ? Path : never
+    >
   }
 
   /**
    * make a get request to the api
    * @param path - the path to api endpoint
-   * @param config - the config to setup axios options and parameters
+   * @param config - the config to setup fetch options and parameters
    * @returns response validated with zod schema provided in the api description
    */
   async get<
@@ -296,7 +291,7 @@ export class ZodiosClass<Api extends ZodiosEndpointDefinitions> {
    * make a post request to the api
    * @param path - the path to api endpoint
    * @param data - the data to send
-   * @param config - the config to setup axios options and parameters
+   * @param config - the config to setup fetch options and parameters
    * @returns response validated with zod schema provided in the api description
    */
   async post<
@@ -321,7 +316,7 @@ export class ZodiosClass<Api extends ZodiosEndpointDefinitions> {
    * make a put request to the api
    * @param path - the path to api endpoint
    * @param data - the data to send
-   * @param config - the config to setup axios options and parameters
+   * @param config - the config to setup fetch options and parameters
    * @returns response validated with zod schema provided in the api description
    */
   async put<
@@ -346,7 +341,7 @@ export class ZodiosClass<Api extends ZodiosEndpointDefinitions> {
    * make a patch request to the api
    * @param path - the path to api endpoint
    * @param data - the data to send
-   * @param config - the config to setup axios options and parameters
+   * @param config - the config to setup fetch options and parameters
    * @returns response validated with zod schema provided in the api description
    */
   async patch<
@@ -370,7 +365,7 @@ export class ZodiosClass<Api extends ZodiosEndpointDefinitions> {
   /**
    * make a delete request to the api
    * @param path - the path to api endpoint
-   * @param config - the config to setup axios options and parameters
+   * @param config - the config to setup fetch options and parameters
    * @returns response validated with zod schema provided in the api description
    */
   async delete<
