@@ -454,31 +454,32 @@ describe('mergeApis', () => {
     expect(merged[0].path).toEqual('/users')
     expect(merged[1].path).toEqual('/users/:id')
     expect(merged[2].path).toEqual('/admins')
-    const test1: Assert<
-      typeof merged,
-      [
-        {
+    // the tuple order of MergeApis depends on UnionToTuple, whose ordering is a
+    // compiler implementation detail, so only assert the length and the set of elements
+    const test1: Assert<(typeof merged)['length'], 3> = true
+    const test2: Assert<
+      (typeof merged)[number],
+      | {
           method: 'get'
           path: '/users'
           alias: 'getUsers'
           description: 'Get all users'
           response: typeof usersSchema
-        },
-        {
+        }
+      | {
           method: 'get'
           path: '/users/:id'
           alias: 'getUser'
           description: 'Get a user'
           response: typeof userSchema
-        },
-        {
+        }
+      | {
           method: 'get'
           path: '/admins'
           alias: 'getAdmins'
           description: 'Get all admins'
           response: typeof usersSchema
-        },
-      ]
+        }
     > = true
   })
 })
