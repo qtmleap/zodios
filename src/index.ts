@@ -10,13 +10,8 @@ export {
   parametersBuilder,
   prefixApi,
 } from './api'
-export {
-  formDataPlugin,
-  formURLPlugin,
-  headerPlugin,
-  PluginId,
-  zodValidationPlugin,
-} from './plugins'
+export type { PluginId } from './plugins'
+export { formDataPlugin, formURLPlugin, headerPlugin, zodValidationPlugin } from './plugins'
 export type { ApiOf, ZodiosClass, ZodiosConstructor, ZodiosInstance } from './zodios'
 export { Zodios } from './zodios'
 export type {

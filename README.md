@@ -5,7 +5,7 @@
    </a>
  </p>
  <p align="center">
-    Zodios is a typescript api client and an optional api server with auto-completion features backed by <a href="https://axios-http.com" >axios</a> and <a href="https://github.com/colinhacks/zod">zod</a> and <a href="https://expressjs.com/">express</a>
+    Zodios is a typescript api client and an optional api server with auto-completion features backed by the native <a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API">fetch API</a> and <a href="https://github.com/colinhacks/zod">zod</a> and <a href="https://expressjs.com/">express</a>
     <br/>
     <a href="https://www.zodios.org/">Documentation</a>
  </p>
@@ -36,15 +36,15 @@ https://user-images.githubusercontent.com/633115/185851987-554f5686-cb78-4096-8f
 
 # What is it ?
 
-It's an axios compatible API client and an optional expressJS compatible API server with the following features:  
+It's a fetch based API client and an optional expressJS compatible API server with the following features:  
   
 - really simple centralized API declaration
 - typescript autocompletion in your favorite IDE for URL and parameters
 - typescript response types
 - parameters and responses schema thanks to zod
 - response schema validation
-- powerfull plugins like `fetch` adapter or `auth` automatic injection
-- all axios features available
+- powerfull plugins like `auth` automatic injection
+- zero runtime dependency: backed by the native fetch API (Node >= 20, browsers, workers)
 - `@tanstack/query` wrappers for react and solid (vue, svelte, etc, soon)
 - all expressJS features available (middlewares, etc.)
 
@@ -52,6 +52,7 @@ It's an axios compatible API client and an optional expressJS compatible API ser
 **Table of contents:**
 
 - [What is it ?](#what-is-it-)
+- [Migration from v10 (axios) to v11 (fetch)](#migration-from-v10-axios-to-v11-fetch)
 - [Install](#install)
   - [Client and api definitions :](#client-and-api-definitions-)
   - [Server :](#server-)
@@ -62,6 +63,20 @@ It's an axios compatible API client and an optional expressJS compatible API ser
 - [Ecosystem](#ecosystem)
 - [Roadmap](#roadmap)
 - [Dependencies](#dependencies)
+
+# Migration from v10 (axios) to v11 (fetch)
+
+Since v11, zodios is backed by the native fetch API and axios is no longer a dependency. Requirements: zod ^4 and Node >= 20 (or any runtime with fetch support).
+
+| v10 (axios) | v11 (fetch) | notes |
+|---|---|---|
+| `new Zodios(url, api, { axiosInstance })` | `new Zodios(url, api, { fetch })` | inject a custom fetch function instead |
+| `new Zodios(url, api, { axiosConfig })` | `new Zodios(url, api, { fetchOptions })` | default `ZodiosFetchOptions` applied to every request |
+| `zodios.axios` getter | removed | use `options.fetch` injection for advanced needs |
+| request config: `paramsSerializer`, `onUploadProgress`, `auth`, `proxy`, ... | `queriesSerializer` and fetch standard options (`signal`, `cache`, `credentials`, ...) | `timeout` is still supported (implemented with `AbortSignal.timeout`) |
+| errors: `AxiosError` | `ZodiosResponseError` | `error.response.status` and `error.response.data` keep the same shape, `isErrorFromPath`/`isErrorFromAlias` are unchanged |
+| plugin hooks: `AxiosResponse` | `ZodiosResponse` | `data`/`status`/`statusText` are unchanged, `headers` is now a fetch `Headers` object: use `headers.get(name)` |
+| type `ErrorsToAxios` | `ErrorsToResponseErrors` | only relevant if you imported from `@zodios/core/lib/zodios.types` |
 
 # Install
 
@@ -222,15 +237,7 @@ for Zod` / `Io-Ts` :
 
 - [x] Fetch:
 
-  - Create a new Fetch client with almost the same features as axios, but without axios dependency `@zodios/fetch`
-
-  - Today we have fetch support with a plugin for axios instance (zodios maintains it's own axios network adapter for fetch). But since axios interceptors are not used by zodios plugins, we can make fetch implementation lighter than axios instance.
-
-  - Create plugins package `@zodios/fetch-plugins`
-
-  - Not sure it's doable without a lot of effort to keep it in sync/compatible with axios client
-
-  - new feature, so no codemod needed
+  - ~~Create a new Fetch client with almost the same features as axios, but without axios dependency~~ Done in v11: the core client is now backed by the native fetch API and axios has been removed entirely.
 
 - [ ] React/Solid:  
 
@@ -264,4 +271,4 @@ Also note that Zodios do not embed any dependency. It's your Job to install the 
   
 Internally Zodios uses these libraries on all platforms :
 - zod
-- axios
+- the native fetch API
