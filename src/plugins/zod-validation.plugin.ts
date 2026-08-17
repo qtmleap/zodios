@@ -1,3 +1,4 @@
+import { prettifyError } from 'zod'
 import { findEndpoint } from '../utils'
 import type { ZodiosOptions, ZodiosPlugin } from '../zodios.types'
 import { ZodiosError } from '../zodios-error'
@@ -94,7 +95,7 @@ export function zodValidationPlugin({ validate, transform, sendDefaults }: Optio
                   endpoint.path
                 }'\nstatus: ${response.status} ${
                   response.statusText
-                }\ncause:\n${parsed.error.message}\nreceived:\n${JSON.stringify(
+                }\ncause:\n${prettifyError(parsed.error)}\nreceived:\n${JSON.stringify(
                   response.data,
                   null,
                   2,

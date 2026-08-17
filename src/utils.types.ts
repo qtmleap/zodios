@@ -224,7 +224,7 @@ export type MapSchemaParameters<T, Frontend extends boolean = true, Acc = {}> = 
           Frontend,
           Merge<
             {
-              [Key in Name]: Schema extends z.ZodType<any, any, any>
+              [Key in Name]: Schema extends z.ZodType
                 ? Frontend extends true
                   ? z.input<Schema>
                   : z.output<Schema>

@@ -773,17 +773,8 @@ describe('Zodios', () => {
       expect((e as ZodiosError).message).toBe(`Zodios: Invalid response from endpoint 'get /:id'
 status: 200 OK
 cause:
-[
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "undefined",
-    "path": [
-      "more"
-    ],
-    "message": "Required"
-  }
-]
+✖ Invalid input: expected string, received undefined
+  → at more
 received:
 {
   "id": 1,
