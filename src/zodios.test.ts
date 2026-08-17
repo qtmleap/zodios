@@ -471,30 +471,34 @@ describe('Zodios', () => {
   })
 
   it('should make an http post with transformed body param', async () => {
-    const zodios = new Zodios(`http://localhost:${port}`, [
-      {
-        method: 'post',
-        path: '/',
-        parameters: [
-          {
-            name: 'name',
-            type: 'Body',
-            schema: z
-              .object({
-                firstname: z.string(),
-                lastname: z.string(),
-              })
-              .transform((data) => ({
-                name: `${data.firstname} ${data.lastname}`,
-              })),
-          },
-        ],
-        response: z.object({
-          id: z.number(),
-          name: z.string(),
-        }),
-      },
-    ])
+    const zodios = new Zodios(
+      `http://localhost:${port}`,
+      [
+        {
+          method: 'post',
+          path: '/',
+          parameters: [
+            {
+              name: 'name',
+              type: 'Body',
+              schema: z
+                .object({
+                  firstname: z.string(),
+                  lastname: z.string(),
+                })
+                .transform((data) => ({
+                  name: `${data.firstname} ${data.lastname}`,
+                })),
+            },
+          ],
+          response: z.object({
+            id: z.number(),
+            name: z.string(),
+          }),
+        },
+      ],
+      { transform: true },
+    )
     const config = {
       method: 'post',
       url: '/',
@@ -507,6 +511,34 @@ describe('Zodios', () => {
       data: { firstname: 'post', lastname: 'test' },
     })
     expect(response).toEqual({ id: 3, name: 'post test' })
+  })
+
+  it('should not transform the body param by default', async () => {
+    const zodios = new Zodios(`http://localhost:${port}`, [
+      {
+        method: 'post',
+        path: '/',
+        parameters: [
+          {
+            name: 'name',
+            type: 'Body',
+            schema: z
+              .object({
+                name: z.string(),
+              })
+              .transform((data) => ({
+                name: `${data.name} transformed`,
+              })),
+          },
+        ],
+        response: z.object({
+          id: z.number(),
+          name: z.string(),
+        }),
+      },
+    ])
+    const response = await zodios.post('/', { name: 'post' })
+    expect(response).toEqual({ id: 3, name: 'post' })
   })
 
   it('should throw a zodios error if params are not correct', async () => {

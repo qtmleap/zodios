@@ -93,7 +93,7 @@ export class ZodiosClass<Api extends ZodiosEndpointDefinitions> {
 
     this.options = {
       validate: true,
-      transform: true,
+      transform: false,
       sendDefaults: false,
       ...options,
     }

@@ -78,6 +78,7 @@ Since v11, zodios is backed by the native fetch API and axios is no longer a dep
 | errors: `AxiosError` | `ZodiosResponseError` | `error.response.status` and `error.response.data` keep the same shape, `isErrorFromPath`/`isErrorFromAlias` are unchanged |
 | plugin hooks: `AxiosResponse` | `ZodiosResponse` | `data`/`status`/`statusText` are unchanged, `headers` is now a fetch `Headers` object: use `headers.get(name)` |
 | type `ErrorsToAxios` | `ErrorsToResponseErrors` | only relevant if you imported from `@zodios/core/lib/zodios.types` |
+| `transform` defaults to `true` | `transform` defaults to `false` | transformation is business code better kept on the backend. Pass `{ transform: true }` to keep the v10 behavior |
 
 ## zod v4
 
@@ -213,7 +214,7 @@ Check out the [full documentation](https://www.zodios.org) or following shortcut
 
 # Roadmap for v11
 
-for Zod` / `Io-Ts` :
+- [ ] TypeProvider for `Zod` / `Io-Ts` :
 
   - By using the TypeProvider pattern we can now make zodios validation agnostic.
 
@@ -223,19 +224,19 @@ for Zod` / `Io-Ts` :
 
   - Not a breaking change so no codemod needed
 
+  - **v11 status: out of scope.** The type system is deeply tied to zod (`z.input`/`z.output`) and v11 just committed to zod v4. If revisited, it should target the [Standard Schema](https://standardschema.dev) spec (which zod v4 implements) rather than per-library providers.
+
 - [x] MonoRepo:
 
   - Zodios will become a really large project so maybe migrate to turbo repo + pnpm
 
   - not a breaking change
 
-- [ ] Transform:
+- [x] Transform:
 
-  - By default, activate transforms on backend and disable on frontend (today it's the opposite), would make server transform code simpler since with this option we could make any transforms activated not just zod defaults.
+  - ~~By default, activate transforms on backend and disable on frontend (today it's the opposite)~~ Done in v11: the client now defaults to `transform: false`. Pass `{ transform: true }` explicitly to keep the v10 behavior.
 
   - Rationale being that transformation can be viewed as business code that should be kept on backend
-
-  - breaking change => codemod to keep current defaults by setting them explicitly
 
 - [x] Axios:
 
@@ -254,6 +255,8 @@ for Zod` / `Io-Ts` :
    - make ZodiosHooks independant of Zodios client instance (axios, fetch)
 
    - not a breaking change, so no codemod needed
+
+   - **v11 status: out of scope.** `ZodiosHooks` lives in the separate `@zodios/react` package, so there is nothing to change in this repository.
 
 - [x] Client Request Config
 
