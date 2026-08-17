@@ -3,8 +3,6 @@ import express from 'express'
 import type { AddressInfo } from 'net'
 import { ZodError, z } from 'zod'
 
-globalThis.FormData = require('form-data')
-
 import multer from 'multer'
 import { apiBuilder } from './api'
 import type { Assert } from './utils.types'
