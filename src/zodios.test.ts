@@ -70,7 +70,7 @@ describe('Zodios', () => {
       res.status(200).json(req.body)
     })
     app.post('/text', express.text(), (req, res) => {
-      res.status(200).send(req.body)
+      res.status(200).type('text/plain').send(req.body)
     })
     server = app.listen(0)
     port = (server.address() as AddressInfo).port
