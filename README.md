@@ -53,6 +53,7 @@ It's a fetch based API client and an optional expressJS compatible API server wi
 
 - [What is it ?](#what-is-it-)
 - [Migration from v10 (axios) to v11 (fetch)](#migration-from-v10-axios-to-v11-fetch)
+  - [zod v4](#zod-v4)
 - [Install](#install)
   - [Client and api definitions :](#client-and-api-definitions-)
   - [Server :](#server-)
@@ -77,6 +78,15 @@ Since v11, zodios is backed by the native fetch API and axios is no longer a dep
 | errors: `AxiosError` | `ZodiosResponseError` | `error.response.status` and `error.response.data` keep the same shape, `isErrorFromPath`/`isErrorFromAlias` are unchanged |
 | plugin hooks: `AxiosResponse` | `ZodiosResponse` | `data`/`status`/`statusText` are unchanged, `headers` is now a fetch `Headers` object: use `headers.get(name)` |
 | type `ErrorsToAxios` | `ErrorsToResponseErrors` | only relevant if you imported from `@zodios/core/lib/zodios.types` |
+
+## zod v4
+
+v11 also moves the zod peer dependency from `^3.x` to `^4.0.0`. What it means for you:
+
+- your api definition schemas must be written with [zod v4](https://zod.dev/v4/changelog): most schemas work unchanged, but some APIs changed (e.g. `z.record` now requires both a key and a value schema: `z.record(z.string(), z.string())`)
+- if you reference zod types in your own helpers, note that the `ZodType` generics changed in v4: use `z.ZodType` instead of `z.ZodType<any, any, any>` / `z.ZodTypeAny`
+- the message of the `ZodiosError` thrown on response validation failure is now formatted with `z.prettifyError` (human readable output instead of the raw JSON issue list) - only relevant if you match on error message strings
+- validation behavior itself (`validate`, `transform`, `sendDefaults`) is unchanged
 
 # Install
 
