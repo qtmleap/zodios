@@ -1,5 +1,5 @@
-import { ReadonlyDeep } from "./utils.types";
-import { AnyZodiosRequestOptions } from "./zodios.types";
+import type { ReadonlyDeep } from './utils.types'
+import type { AnyZodiosRequestOptions } from './zodios.types'
 
 /**
  * Custom Zodios Error with additional information
@@ -13,8 +13,8 @@ export class ZodiosError extends Error {
     message: string,
     public readonly config?: ReadonlyDeep<AnyZodiosRequestOptions>,
     public readonly data?: unknown,
-    public readonly cause?: Error
+    public readonly cause?: Error,
   ) {
-    super(message);
+    super(message)
   }
 }

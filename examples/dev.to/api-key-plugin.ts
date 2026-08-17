@@ -1,9 +1,9 @@
-import { AxiosRequestConfig } from "axios";
-import { config } from "process";
-import { ZodiosPlugin } from "../../src/index";
+import { AxiosRequestConfig } from 'axios'
+import { config } from 'process'
+import type { ZodiosPlugin } from '../../src/index'
 
 export interface ApiKeyPluginConfig {
-  getApiKey: () => Promise<string>;
+  getApiKey: () => Promise<string>
 }
 
 export function pluginApiKey(provider: ApiKeyPluginConfig): ZodiosPlugin {
@@ -13,9 +13,9 @@ export function pluginApiKey(provider: ApiKeyPluginConfig): ZodiosPlugin {
         ...config,
         headers: {
           ...config.headers,
-          "api-key": await provider.getApiKey(),
+          'api-key': await provider.getApiKey(),
         },
-      };
+      }
     },
-  };
+  }
 }

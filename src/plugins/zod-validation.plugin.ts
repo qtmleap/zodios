@@ -1,17 +1,15 @@
-import { ZodiosError } from "../zodios-error";
-import type { ZodiosOptions, ZodiosPlugin } from "../zodios.types";
-import { findEndpoint } from "../utils";
+import { findEndpoint } from '../utils'
+import type { ZodiosOptions, ZodiosPlugin } from '../zodios.types'
+import { ZodiosError } from '../zodios-error'
 
-type Options = Required<
-  Pick<ZodiosOptions, "validate" | "transform" | "sendDefaults">
->;
+type Options = Required<Pick<ZodiosOptions, 'validate' | 'transform' | 'sendDefaults'>>
 
 function shouldResponse(option: string | boolean) {
-  return [true, "response", "all"].includes(option);
+  return [true, 'response', 'all'].includes(option)
 }
 
 function shouldRequest(option: string | boolean) {
-  return [true, "request", "all"].includes(option);
+  return [true, 'request', 'all'].includes(option)
 }
 
 /**
@@ -19,24 +17,18 @@ function shouldRequest(option: string | boolean) {
  * By default zodios always validates the response.
  * @returns zod-validation plugin
  */
-export function zodValidationPlugin({
-  validate,
-  transform,
-  sendDefaults,
-}: Options): ZodiosPlugin {
+export function zodValidationPlugin({ validate, transform, sendDefaults }: Options): ZodiosPlugin {
   return {
-    name: "zod-validation",
+    name: 'zod-validation',
     request: shouldRequest(validate)
       ? async (api, config) => {
-          const endpoint = findEndpoint(api, config.method, config.url);
+          const endpoint = findEndpoint(api, config.method, config.url)
           if (!endpoint) {
-            throw new Error(
-              `No endpoint found for ${config.method} ${config.url}`
-            );
+            throw new Error(`No endpoint found for ${config.method} ${config.url}`)
           }
-          const { parameters } = endpoint;
+          const { parameters } = endpoint
           if (!parameters) {
-            return config;
+            return config
           }
           const conf = {
             ...config,
@@ -49,59 +41,53 @@ export function zodValidationPlugin({
             params: {
               ...config.params,
             },
-          };
+          }
           const paramsOf = {
             Query: (name: string) => conf.queries?.[name],
             Body: (_: string) => conf.data,
             Header: (name: string) => conf.headers?.[name],
             Path: (name: string) => conf.params?.[name],
-          };
+          }
           const setParamsOf = {
             Query: (name: string, value: any) => (conf.queries![name] = value),
             Body: (_: string, value: any) => (conf.data = value),
             Header: (name: string, value: any) => (conf.headers![name] = value),
             Path: (name: string, value: any) => (conf.params![name] = value),
-          };
-          const transformRequest = shouldRequest(transform);
+          }
+          const transformRequest = shouldRequest(transform)
           for (const parameter of parameters) {
-            const { name, schema, type } = parameter;
-            const value = paramsOf[type](name);
+            const { name, schema, type } = parameter
+            const value = paramsOf[type](name)
             if (sendDefaults || value !== undefined) {
-              const parsed = await schema.safeParseAsync(value);
+              const parsed = await schema.safeParseAsync(value)
               if (!parsed.success) {
                 throw new ZodiosError(
                   `Zodios: Invalid ${type} parameter '${name}'`,
                   config,
                   value,
-                  parsed.error
-                );
+                  parsed.error,
+                )
               }
               if (transformRequest) {
-                setParamsOf[type](name, parsed.data);
+                setParamsOf[type](name, parsed.data)
               }
             }
           }
-          return conf;
+          return conf
         }
       : undefined,
     response: shouldResponse(validate)
       ? async (api, config, response) => {
-          const endpoint = findEndpoint(api, config.method, config.url);
+          const endpoint = findEndpoint(api, config.method, config.url)
           /* istanbul ignore next */
           if (!endpoint) {
-            throw new Error(
-              `No endpoint found for ${config.method} ${config.url}`
-            );
+            throw new Error(`No endpoint found for ${config.method} ${config.url}`)
           }
           if (
-            response.headers?.["content-type"]?.includes("application/json") ||
-            response.headers?.["content-type"]?.includes(
-              "application/vnd.api+json"
-            )
+            response.headers?.['content-type']?.includes('application/json') ||
+            response.headers?.['content-type']?.includes('application/vnd.api+json')
           ) {
-            const parsed = await endpoint.response.safeParseAsync(
-              response.data
-            );
+            const parsed = await endpoint.response.safeParseAsync(response.data)
             if (!parsed.success) {
               throw new ZodiosError(
                 `Zodios: Invalid response from endpoint '${endpoint.method} ${
@@ -111,19 +97,19 @@ export function zodValidationPlugin({
                 }\ncause:\n${parsed.error.message}\nreceived:\n${JSON.stringify(
                   response.data,
                   null,
-                  2
+                  2,
                 )}`,
                 config,
                 response.data,
-                parsed.error
-              );
+                parsed.error,
+              )
             }
             if (shouldResponse(transform)) {
-              response.data = parsed.data;
+              response.data = parsed.data
             }
           }
-          return response;
+          return response
         }
       : undefined,
-  };
+  }
 }

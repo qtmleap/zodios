@@ -1,16 +1,16 @@
-import type { Config } from "@jest/types";
+import type { Config } from '@jest/types'
 
 // Objet synchrone
 const config: Config.InitialOptions = {
   verbose: true,
-  moduleFileExtensions: ["ts", "js", "json", "node"],
-  rootDir: "./",
-  testRegex: ".(spec|test).tsx?$",
+  moduleFileExtensions: ['ts', 'js', 'json', 'node'],
+  rootDir: './',
+  testRegex: '.(spec|test).tsx?$',
   transform: {
-    "^.+\\.tsx?$": "ts-jest",
+    '^.+\\.tsx?$': 'ts-jest',
   },
-  coveragePathIgnorePatterns: ["<rootDir>/node_modules/", "index\\.ts"],
-  coverageDirectory: "./coverage",
+  coveragePathIgnorePatterns: ['<rootDir>/node_modules/', 'index\\.ts'],
+  coverageDirectory: './coverage',
   coverageThreshold: {
     global: {
       branches: 80,
@@ -19,6 +19,6 @@ const config: Config.InitialOptions = {
       statements: 85,
     },
   },
-  testEnvironment: "node",
-};
-export default config;
+  testEnvironment: 'node',
+}
+export default config

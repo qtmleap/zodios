@@ -18,23 +18,32 @@ jobs:
         with:
           registry-url: "https://registry.npmjs.org"
           node-version: ${{ matrix.node-version }}
-          cache: "yarn"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Cache Bun install
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
       - name: install dependencies
-        run: yarn install
+        run: bun install --frozen-lockfile
       - name: build
-        run: yarn build
+        run: bun run build
       - name: run test
-        run: yarn test
+        run: bun run test
       - name: publish to npm
         # only run when tag has no 'rc' in it
         if: ${{ !contains(github.ref, 'rc') }}
-        run: yarn publish --access public
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: publish beta to npm
         # only run when tag has 'rc' in it
         if: ${{ contains(github.ref, 'rc') }}
-        run: yarn publish --access public --tag beta
+        run: npm publish --access public --tag beta
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: generate changelog
