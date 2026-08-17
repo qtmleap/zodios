@@ -1,5 +1,3 @@
-import type axios from 'axios'
-import type { AxiosError, AxiosInstance, AxiosResponse } from 'axios'
 import type z from 'zod'
 import type {
   FilterArrayByKey,
@@ -17,8 +15,61 @@ import type {
   UndefinedIfNever,
   UndefinedToOptional,
 } from './utils.types'
+import type { ZodiosResponseError } from './zodios-error'
 
-type AxiosRequestConfig = Parameters<typeof axios.request>[0]
+/**
+ * fetch function signature used by zodios to make requests
+ * allows to inject a custom fetch implementation (polyfill, mock, proxy, ...)
+ */
+export type FetchProvider = typeof globalThis.fetch
+
+/**
+ * http response returned by the zodios fetcher and passed to plugins
+ * `data`, `status` and `statusText` are stable accessors while `raw` gives
+ * access to the underlying fetch Response for advanced use cases
+ */
+export type ZodiosResponse<Data = unknown> = {
+  status: number
+  statusText: string
+  headers: Headers
+  data: Data
+  raw: Response
+}
+
+/**
+ * fetch options that can be set per request or as defaults on the zodios instance
+ */
+export type ZodiosFetchOptions = {
+  /**
+   * request headers
+   */
+  headers?: Record<string, string>
+  /**
+   * abort the request after this delay in milliseconds
+   */
+  timeout?: number
+  /**
+   * abort signal, combined with `timeout` if both are set
+   */
+  signal?: AbortSignal
+  cache?: RequestCache
+  credentials?: RequestCredentials
+  keepalive?: boolean
+  mode?: RequestMode
+  redirect?: RequestRedirect
+  referrer?: string
+  referrerPolicy?: ReferrerPolicy
+  integrity?: string
+  priority?: 'high' | 'low' | 'auto'
+  /**
+   * how to read the response body, defaults to content-type driven parsing
+   */
+  responseType?: 'json' | 'text' | 'blob' | 'arrayBuffer' | 'stream'
+  /**
+   * override the default query string serializer (repeat format: `id=1&id=2`)
+   */
+  queriesSerializer?: (queries: Record<string, unknown>) => string
+}
 
 export type MutationMethod = 'post' | 'put' | 'patch' | 'delete'
 
@@ -168,21 +219,24 @@ export type ZodiosErrorByPath<
       >
     >
 
-export type ErrorsToAxios<T, Acc extends unknown[] = []> = T extends [infer Head, ...infer Tail]
+export type ErrorsToResponseErrors<T, Acc extends unknown[] = []> = T extends [
+  infer Head,
+  ...infer Tail,
+]
   ? Head extends {
       status: infer Status
       schema: infer Schema
     }
     ? Schema extends z.ZodType
-      ? ErrorsToAxios<
+      ? ErrorsToResponseErrors<
           Tail,
           [
             ...Acc,
             Merge<
-              Omit<AxiosError, 'status' | 'response'>,
+              Omit<ZodiosResponseError, 'response'>,
               {
                 response: Merge<
-                  AxiosError<z.output<Schema>>['response'],
+                  Omit<ZodiosResponse<z.output<Schema>>, 'status'>,
                   {
                     status: Status extends 'default' ? 0 & { error: Status } : Status
                   }
@@ -199,12 +253,12 @@ export type ZodiosMatchingErrorsByPath<
   Api extends ZodiosEndpointDefinition[],
   M extends Method,
   Path extends ZodiosPathsByMethod<Api, M>,
-> = ErrorsToAxios<ZodiosEndpointDefinitionByPath<Api, M, Path>[number]['errors']>[number]
+> = ErrorsToResponseErrors<ZodiosEndpointDefinitionByPath<Api, M, Path>[number]['errors']>[number]
 
 export type ZodiosMatchingErrorsByAlias<
   Api extends ZodiosEndpointDefinition[],
   Alias extends string,
-> = ErrorsToAxios<ZodiosEndpointDefinitionByAlias<Api, Alias>[number]['errors']>[number]
+> = ErrorsToResponseErrors<ZodiosEndpointDefinitionByAlias<Api, Alias>[number]['errors']>[number]
 
 export type ZodiosErrorByAlias<
   Api extends ZodiosEndpointDefinition[],
@@ -460,7 +514,7 @@ export type ZodiosRequestOptionsByAlias<
       headers: ZodiosHeaderParamsByAlias<Api, Alias>
     }>
   >,
-  Omit<AxiosRequestConfig, 'params' | 'baseURL' | 'data' | 'method' | 'url'>
+  ZodiosFetchOptions
 >
 
 export type ZodiosMutationAliasRequest<Body, Config, Response> =
@@ -497,8 +551,10 @@ export type AnyZodiosMethodOptions = Merge<
     params?: Record<string, unknown>
     queries?: Record<string, unknown>
     headers?: Record<string, string>
+    data?: unknown
+    baseURL?: string
   },
-  Omit<AxiosRequestConfig, 'params' | 'headers' | 'url' | 'method'>
+  ZodiosFetchOptions
 >
 
 export type AnyZodiosRequestOptions = Merge<{ method: Method; url: string }, AnyZodiosMethodOptions>
@@ -518,7 +574,7 @@ export type ZodiosMethodOptions<
       headers: ZodiosHeaderParamsByPath<Api, M, Path>
     }>
   >,
-  Omit<AxiosRequestConfig, 'params' | 'baseURL' | 'data' | 'method' | 'url'>
+  ZodiosFetchOptions
 >
 
 /**
@@ -536,7 +592,7 @@ export type ZodiosRequestOptionsByPath<
       headers: ZodiosHeaderParamsByPath<Api, M, Path>
     }>
   >,
-  Omit<AxiosRequestConfig, 'params' | 'baseURL' | 'data' | 'method' | 'url'>
+  ZodiosFetchOptions
 >
 
 export type ZodiosRequestOptions<
@@ -570,13 +626,14 @@ export type ZodiosOptions = {
    */
   sendDefaults?: boolean
   /**
-   * Override the default axios instance. Default: zodios will create it's own axios instance
+   * Override the fetch implementation used to make requests.
+   * Default: globalThis.fetch
    */
-  axiosInstance?: AxiosInstance
+  fetch?: FetchProvider
   /**
-   * default config for axios requests
+   * default fetch options applied to every request
    */
-  axiosConfig?: AxiosRequestConfig
+  fetchOptions?: ZodiosFetchOptions
 }
 
 export type ZodiosEndpointParameter<T = unknown> = {
@@ -711,8 +768,8 @@ export type ZodiosPlugin = {
   response?: (
     api: ZodiosEndpointDefinitions,
     config: ReadonlyDeep<AnyZodiosRequestOptions>,
-    response: AxiosResponse,
-  ) => Promise<AxiosResponse>
+    response: ZodiosResponse,
+  ) => Promise<ZodiosResponse>
   /**
    * error interceptor for response errors
    * there is no error interceptor for request errors
@@ -725,5 +782,5 @@ export type ZodiosPlugin = {
     api: ZodiosEndpointDefinitions,
     config: ReadonlyDeep<AnyZodiosRequestOptions>,
     error: Error,
-  ) => Promise<AxiosResponse>
+  ) => Promise<ZodiosResponse>
 }

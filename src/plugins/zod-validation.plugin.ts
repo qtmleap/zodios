@@ -84,9 +84,10 @@ export function zodValidationPlugin({ validate, transform, sendDefaults }: Optio
           if (!endpoint) {
             throw new Error(`No endpoint found for ${config.method} ${config.url}`)
           }
+          const contentType = response.headers.get('content-type')
           if (
-            response.headers?.['content-type']?.includes('application/json') ||
-            response.headers?.['content-type']?.includes('application/vnd.api+json')
+            contentType?.includes('application/json') ||
+            contentType?.includes('application/vnd.api+json')
           ) {
             const parsed = await endpoint.response.safeParseAsync(response.data)
             if (!parsed.success) {

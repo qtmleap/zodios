@@ -22,6 +22,7 @@ export { Zodios } from './zodios'
 export type {
   AnyZodiosMethodOptions,
   AnyZodiosRequestOptions,
+  FetchProvider,
   Method,
   ZodiosBodyByAlias,
   ZodiosBodyByPath,
@@ -37,6 +38,7 @@ export type {
   ZodiosErrorByAlias,
   ZodiosErrorByPath,
   ZodiosErrorForEndpoint,
+  ZodiosFetchOptions,
   ZodiosHeaderParamsByAlias,
   ZodiosHeaderParamsByPath,
   ZodiosHeaderParamsForEndpoint,
@@ -54,9 +56,10 @@ export type {
   ZodiosRequestOptions,
   ZodiosRequestOptionsByAlias,
   ZodiosRequestOptionsByPath,
+  ZodiosResponse,
   ZodiosResponseByAlias,
   ZodiosResponseByPath,
   ZodiosResponseForEndpoint,
 } from './zodios.types'
-export { ZodiosError } from './zodios-error'
+export { ZodiosError, ZodiosResponseError } from './zodios-error'
 export { isErrorFromAlias, isErrorFromPath } from './zodios-error.utils'

@@ -1,8 +1,7 @@
-import type { AxiosResponse } from 'axios'
 import { z } from 'zod'
 import { apiBuilder } from '../api'
 import type { ReadonlyDeep } from '../utils.types'
-import type { AnyZodiosRequestOptions } from '../zodios.types'
+import type { AnyZodiosRequestOptions, ZodiosResponse } from '../zodios.types'
 import { zodValidationPlugin } from './zod-validation.plugin'
 
 describe('zodValidationPlugin', () => {
@@ -285,17 +284,16 @@ received:
 
   const createSampleResponse = (
     { headers } = { headers: { 'content-type': 'application/json' } },
-  ) =>
-    ({
-      data: {
-        first: '123',
-        second: 111,
-      },
-      status: 200,
-      headers: headers,
-      config: {},
-      statusText: 'OK',
-    }) as unknown as AxiosResponse
+  ): ZodiosResponse<any> => ({
+    data: {
+      first: '123',
+      second: 111,
+    },
+    status: 200,
+    headers: new Headers(headers),
+    statusText: 'OK',
+    raw: new Response(),
+  })
 
   const api = apiBuilder({
     path: '/parse',

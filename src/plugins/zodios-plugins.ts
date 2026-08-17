@@ -1,10 +1,10 @@
-import type { AxiosResponse } from 'axios'
 import type { ReadonlyDeep } from '../utils.types'
 import type {
   AnyZodiosRequestOptions,
   Method,
   ZodiosEndpointDefinitions,
   ZodiosPlugin,
+  ZodiosResponse,
 } from '../zodios.types'
 
 export type PluginId = {
@@ -105,7 +105,7 @@ export class ZodiosPlugins {
   async interceptResponse(
     api: ZodiosEndpointDefinitions,
     config: ReadonlyDeep<AnyZodiosRequestOptions>,
-    response: Promise<AxiosResponse>,
+    response: Promise<ZodiosResponse>,
   ) {
     let pluginResponse = response
     for (let index = this.plugins.length - 1; index >= 0; index--) {

@@ -1,10 +1,10 @@
-import type { AxiosError } from 'axios'
 import type { ReadonlyDeep } from './utils.types'
 import type {
   AnyZodiosRequestOptions,
   ZodiosEndpointDefinition,
   ZodiosEndpointDefinitions,
 } from './zodios.types'
+import type { ZodiosResponseError } from './zodios-error'
 
 /**
  * omit properties from an object
@@ -66,8 +66,8 @@ export function findEndpointByAlias(api: ZodiosEndpointDefinitions, alias: strin
   return api.find((e) => e.alias === alias)
 }
 
-export function findEndpointErrors(endpoint: ZodiosEndpointDefinition, err: AxiosError) {
-  const matchingErrors = endpoint.errors?.filter((error) => error.status === err.response!.status)
+export function findEndpointErrors(endpoint: ZodiosEndpointDefinition, err: ZodiosResponseError) {
+  const matchingErrors = endpoint.errors?.filter((error) => error.status === err.response.status)
   if (matchingErrors && matchingErrors.length > 0) return matchingErrors
   return endpoint.errors?.filter((error) => error.status === 'default')
 }
@@ -76,12 +76,10 @@ export function findEndpointErrorsByPath(
   api: ZodiosEndpointDefinitions,
   method: string,
   path: string,
-  err: AxiosError,
+  err: ZodiosResponseError,
 ) {
   const endpoint = findEndpoint(api, method, path)
   return endpoint &&
-    err.config &&
-    err.config.url &&
     endpoint.method === err.config.method &&
     pathMatchesUrl(endpoint.path, err.config.url)
     ? findEndpointErrors(endpoint, err)
@@ -91,13 +89,11 @@ export function findEndpointErrorsByPath(
 export function findEndpointErrorsByAlias(
   api: ZodiosEndpointDefinitions,
   alias: string,
-  err: AxiosError,
+  err: ZodiosResponseError,
 ) {
   const endpoint = findEndpointByAlias(api, alias)
 
   return endpoint &&
-    err.config &&
-    err.config.url &&
     endpoint.method === err.config.method &&
     pathMatchesUrl(endpoint.path, err.config.url)
     ? findEndpointErrors(endpoint, err)

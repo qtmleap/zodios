@@ -1,14 +1,12 @@
-import { AxiosError } from 'axios'
 import express from 'express'
+import multer from 'multer'
 import type { AddressInfo } from 'net'
 import { ZodError, z } from 'zod'
-
-import multer from 'multer'
 import { apiBuilder } from './api'
 import type { Assert } from './utils.types'
 import { Zodios } from './zodios'
 import type { ZodiosPlugin } from './zodios.types'
-import { ZodiosError } from './zodios-error'
+import { ZodiosError, ZodiosResponseError } from './zodios-error'
 import { isErrorFromAlias, isErrorFromPath } from './zodios-error.utils'
 
 const multipart = multer({ storage: multer.memoryStorage() })
@@ -101,9 +99,21 @@ describe('Zodios', () => {
     expect(() => new Zodios({})).toThrowError('Zodios: api must be an array')
   })
 
-  it('should return the underlying axios instance', () => {
-    const zodios = new Zodios(`http://localhost:${port}`, [])
-    expect(zodios.axios).toBeDefined()
+  it('should use the injected fetch implementation', async () => {
+    const fetchSpy = vi.fn(globalThis.fetch)
+    const zodios = new Zodios(
+      `http://localhost:${port}`,
+      [
+        {
+          method: 'get',
+          path: '/token',
+          response: z.object({ token: z.string().nullish() }),
+        },
+      ],
+      { fetch: fetchSpy },
+    )
+    await zodios.get('/token', { headers: { Authorization: 'Bearer test' } })
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
   })
   it('should create a new instance of Zodios', () => {
     const zodios = new Zodios(`http://localhost:${port}`, [])
@@ -861,8 +871,8 @@ received:
     } catch (e) {
       error = e
     }
-    expect(error).toBeInstanceOf(AxiosError)
-    expect((error as AxiosError).response?.status).toBe(502)
+    expect(error).toBeInstanceOf(ZodiosResponseError)
+    expect((error as ZodiosResponseError).response.status).toBe(502)
     if (isErrorFromPath(zodios.api, 'get', '/error502', error)) {
       expect(error.response.status).toBe(502)
       if (error.response.status === 502) {
@@ -1051,8 +1061,8 @@ received:
       error = e
     }
 
-    expect(error).toBeInstanceOf(AxiosError)
-    expect((error as AxiosError).response?.status).toBe(502)
+    expect(error).toBeInstanceOf(ZodiosResponseError)
+    expect((error as ZodiosResponseError).response.status).toBe(502)
     expect(isErrorFromPath(zodios.api, 'get', '/error502', error)).toBe(false)
     expect(isErrorFromAlias(zodios.api, 'getError502', error)).toBe(false)
   })
@@ -1080,7 +1090,7 @@ received:
     })
   })
 
-  it('should trigger an axios error with error response', async () => {
+  it('should trigger a response error with error response', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
         method: 'get',
@@ -1094,7 +1104,7 @@ received:
     try {
       await zodios.get('/error502')
     } catch (e) {
-      expect((e as AxiosError).response?.data).toEqual({
+      expect((e as ZodiosResponseError).response.data).toEqual({
         error: {
           message: 'bad gateway',
         },
