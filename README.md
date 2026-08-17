@@ -80,6 +80,14 @@ Since v11, zodios is backed by the native fetch API and axios is no longer a dep
 | type `ErrorsToAxios` | `ErrorsToResponseErrors` | only relevant if you imported from `@zodios/core/lib/zodios.types` |
 | `transform` defaults to `true` | `transform` defaults to `false` | transformation is business code better kept on the backend. Pass `{ transform: true }` to keep the v10 behavior |
 
+## ESM only
+
+v11 is published as an ESM-only package (no CJS build). What it means for you:
+
+- `import` users: nothing changes
+- `require()` users: Node >= 20.19 (or >= 22.12) can `require()` ESM modules natively, so `const { Zodios } = require("@zodios/core")` keeps working there. On older runtimes, migrate to `import` or use dynamic `import()`
+- bundlers (vite, webpack, esbuild, ...) handle ESM-only dependencies out of the box
+
 ## zod v4
 
 v11 also moves the zod peer dependency from `^3.x` to `^4.0.0`. What it means for you:

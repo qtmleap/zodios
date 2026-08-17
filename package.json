@@ -3,29 +3,16 @@
   "description": "Typescript API client with autocompletion and zod validations",
   "version": "11.0.0-rc.0",
   "type": "module",
-  "main": "./lib/index.cjs",
-  "module": "./lib/index.js",
+  "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./lib/index.d.ts",
-        "default": "./lib/index.js"
-      },
-      "require": {
-        "types": "./lib/index.d.cts",
-        "default": "./lib/index.cjs"
-      }
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
     },
     "./lib/*.types": {
-      "import": {
-        "types": "./lib/*.types.d.ts",
-        "default": "./lib/*.types.js"
-      },
-      "require": {
-        "types": "./lib/*.types.d.cts",
-        "default": "./lib/*.types.cjs"
-      }
+      "types": "./lib/*.types.d.ts",
+      "default": "./lib/*.types.js"
     },
     "./package.json": "./package.json"
   },
@@ -63,8 +50,8 @@
     "minor-rc": "npm version preminor --preid=rc",
     "patch-rc": "npm version prepatch --preid=rc",
     "rc": "npm version prerelease --preid=rc",
-    "build": "tsup",
-    "check:exports": "publint && attw --pack .",
+    "build": "tsdown",
+    "check:exports": "publint && attw --pack . --profile esm-only",
     "test": "vitest run --coverage",
     "test:watch": "vitest"
   },
@@ -73,20 +60,20 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
-    "@biomejs/biome": "^2",
-    "@commitlint/config-conventional": "^21.2.0",
-    "@types/express": "4.17.19",
-    "@types/multer": "1.4.8",
-    "@types/node": "^24",
+    "@biomejs/biome": "^2.5.8",
+    "@commitlint/config-conventional": "^21.2.2",
+    "@types/express": "5.0.6",
+    "@types/multer": "2.2.0",
+    "@types/node": "^26.2.0",
     "@vitest/coverage-v8": "^4.1.10",
-    "commitlint": "^21.2.1",
-    "conventional-changelog-conventionalcommits": "^10.2.1",
-    "express": "4.18.2",
-    "multer": "1.4.5-lts.1",
+    "commitlint": "^21.2.2",
+    "conventional-changelog-conventionalcommits": "^10.3.0",
+    "express": "5.2.1",
+    "multer": "2.2.0",
     "publint": "^0.3.23",
-    "tsup": "^8",
-    "typescript": "^5.9",
+    "tsdown": "^0.22.14",
+    "typescript": "^7.0.2",
     "vitest": "^4.1.10",
-    "zod": "^4"
+    "zod": "^4.4.3"
   }
 }
