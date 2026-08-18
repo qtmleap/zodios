@@ -5,7 +5,7 @@
    </a>
  </p>
  <p align="center">
-    Zodios is a typescript api client and an optional api server with auto-completion features backed by <a href="https://axios-http.com" >axios</a> and <a href="https://github.com/colinhacks/zod">zod</a> and <a href="https://expressjs.com/">express</a>
+    Zodios is a typescript api client and an optional api server with auto-completion features backed by the native <a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API">fetch API</a> and <a href="https://github.com/colinhacks/zod">zod</a> and <a href="https://expressjs.com/">express</a>
     <br/>
     <a href="https://www.zodios.org/">Documentation</a>
  </p>
@@ -36,15 +36,15 @@ https://user-images.githubusercontent.com/633115/185851987-554f5686-cb78-4096-8f
 
 # What is it ?
 
-It's an axios compatible API client and an optional expressJS compatible API server with the following features:  
+It's a fetch based API client and an optional expressJS compatible API server with the following features:  
   
 - really simple centralized API declaration
 - typescript autocompletion in your favorite IDE for URL and parameters
 - typescript response types
 - parameters and responses schema thanks to zod
 - response schema validation
-- powerfull plugins like `fetch` adapter or `auth` automatic injection
-- all axios features available
+- powerfull plugins like `auth` automatic injection
+- zero runtime dependency: backed by the native fetch API (Node >= 20, browsers, workers)
 - `@tanstack/query` wrappers for react and solid (vue, svelte, etc, soon)
 - all expressJS features available (middlewares, etc.)
 
@@ -52,6 +52,8 @@ It's an axios compatible API client and an optional expressJS compatible API ser
 **Table of contents:**
 
 - [What is it ?](#what-is-it-)
+- [Migration from v10 (axios) to v11 (fetch)](#migration-from-v10-axios-to-v11-fetch)
+  - [zod v4](#zod-v4)
 - [Install](#install)
   - [Client and api definitions :](#client-and-api-definitions-)
   - [Server :](#server-)
@@ -62,6 +64,38 @@ It's an axios compatible API client and an optional expressJS compatible API ser
 - [Ecosystem](#ecosystem)
 - [Roadmap](#roadmap)
 - [Dependencies](#dependencies)
+
+# Migration from v10 (axios) to v11 (fetch)
+
+Since v11, zodios is backed by the native fetch API and axios is no longer a dependency. Requirements: zod ^4 and Node >= 20 (or any runtime with fetch support).
+
+| v10 (axios) | v11 (fetch) | notes |
+|---|---|---|
+| `new Zodios(url, api, { axiosInstance })` | `new Zodios(url, api, { fetch })` | inject a custom fetch function instead |
+| `new Zodios(url, api, { axiosConfig })` | `new Zodios(url, api, { fetchOptions })` | default `ZodiosFetchOptions` applied to every request |
+| `zodios.axios` getter | removed | use `options.fetch` injection for advanced needs |
+| request config: `paramsSerializer`, `onUploadProgress`, `auth`, `proxy`, ... | `queriesSerializer` and fetch standard options (`signal`, `cache`, `credentials`, ...) | `timeout` is still supported (implemented with `AbortSignal.timeout`) |
+| errors: `AxiosError` | `ZodiosResponseError` | `error.response.status` and `error.response.data` keep the same shape, `isErrorFromPath`/`isErrorFromAlias` are unchanged |
+| plugin hooks: `AxiosResponse` | `ZodiosResponse` | `data`/`status`/`statusText` are unchanged, `headers` is now a fetch `Headers` object: use `headers.get(name)` |
+| type `ErrorsToAxios` | `ErrorsToResponseErrors` | only relevant if you imported from `@zodios/core/lib/zodios.types` |
+| `transform` defaults to `true` | `transform` defaults to `false` | transformation is business code better kept on the backend. Pass `{ transform: true }` to keep the v10 behavior |
+
+## ESM only
+
+v11 is published as an ESM-only package (no CJS build). What it means for you:
+
+- `import` users: nothing changes
+- `require()` users: Node >= 20.19 (or >= 22.12) can `require()` ESM modules natively, so `const { Zodios } = require("@zodios/core")` keeps working there. On older runtimes, migrate to `import` or use dynamic `import()`
+- bundlers (vite, webpack, esbuild, ...) handle ESM-only dependencies out of the box
+
+## zod v4
+
+v11 also moves the zod peer dependency from `^3.x` to `^4.0.0`. What it means for you:
+
+- your api definition schemas must be written with [zod v4](https://zod.dev/v4/changelog): most schemas work unchanged, but some APIs changed (e.g. `z.record` now requires both a key and a value schema: `z.record(z.string(), z.string())`)
+- if you reference zod types in your own helpers, note that the `ZodType` generics changed in v4: use `z.ZodType` instead of `z.ZodType<any, any, any>` / `z.ZodTypeAny`
+- the message of the `ZodiosError` thrown on response validation failure is now formatted with `z.prettifyError` (human readable output instead of the raw JSON issue list) - only relevant if you match on error message strings
+- validation behavior itself (`validate`, `transform`, `sendDefaults`) is unchanged
 
 # Install
 
@@ -188,7 +222,7 @@ Check out the [full documentation](https://www.zodios.org) or following shortcut
 
 # Roadmap for v11
 
-for Zod` / `Io-Ts` :
+- [ ] TypeProvider for `Zod` / `Io-Ts` :
 
   - By using the TypeProvider pattern we can now make zodios validation agnostic.
 
@@ -198,19 +232,19 @@ for Zod` / `Io-Ts` :
 
   - Not a breaking change so no codemod needed
 
+  - **v11 status: out of scope.** The type system is deeply tied to zod (`z.input`/`z.output`) and v11 just committed to zod v4. If revisited, it should target the [Standard Schema](https://standardschema.dev) spec (which zod v4 implements) rather than per-library providers.
+
 - [x] MonoRepo:
 
   - Zodios will become a really large project so maybe migrate to turbo repo + pnpm
 
   - not a breaking change
 
-- [ ] Transform:
+- [x] Transform:
 
-  - By default, activate transforms on backend and disable on frontend (today it's the opposite), would make server transform code simpler since with this option we could make any transforms activated not just zod defaults.
+  - ~~By default, activate transforms on backend and disable on frontend (today it's the opposite)~~ Done in v11: the client now defaults to `transform: false`. Pass `{ transform: true }` explicitly to keep the v10 behavior.
 
   - Rationale being that transformation can be viewed as business code that should be kept on backend
-
-  - breaking change => codemod to keep current defaults by setting them explicitly
 
 - [x] Axios:
 
@@ -222,21 +256,15 @@ for Zod` / `Io-Ts` :
 
 - [x] Fetch:
 
-  - Create a new Fetch client with almost the same features as axios, but without axios dependency `@zodios/fetch`
-
-  - Today we have fetch support with a plugin for axios instance (zodios maintains it's own axios network adapter for fetch). But since axios interceptors are not used by zodios plugins, we can make fetch implementation lighter than axios instance.
-
-  - Create plugins package `@zodios/fetch-plugins`
-
-  - Not sure it's doable without a lot of effort to keep it in sync/compatible with axios client
-
-  - new feature, so no codemod needed
+  - ~~Create a new Fetch client with almost the same features as axios, but without axios dependency~~ Done in v11: the core client is now backed by the native fetch API and axios has been removed entirely.
 
 - [ ] React/Solid:  
 
    - make ZodiosHooks independant of Zodios client instance (axios, fetch)
 
    - not a breaking change, so no codemod needed
+
+   - **v11 status: out of scope.** `ZodiosHooks` lives in the separate `@zodios/react` package, so there is nothing to change in this repository.
 
 - [x] Client Request Config
 
@@ -264,4 +292,4 @@ Also note that Zodios do not embed any dependency. It's your Job to install the 
   
 Internally Zodios uses these libraries on all platforms :
 - zod
-- axios
+- the native fetch API
