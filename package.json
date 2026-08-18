@@ -1,5 +1,5 @@
 {
-  "name": "@zodios/core",
+  "name": "@qtmleap/zodios",
   "description": "Typescript API client with autocompletion and zod validations",
   "version": "11.0.0-rc.0",
   "type": "module",
@@ -24,10 +24,14 @@
     "name": "ecyrbe",
     "email": "ecyrbe@gmail.com"
   },
-  "homepage": "https://github.com/ecyrbe/zodios",
+  "homepage": "https://github.com/qtmleap/zodios",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ecyrbe/zodios.git"
+    "url": "git+https://github.com/qtmleap/zodios.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
   },
   "license": "MIT",
   "keywords": [

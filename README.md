@@ -99,28 +99,23 @@ v11 also moves the zod peer dependency from `^3.x` to `^4.0.0`. What it means fo
 
 # Install
 
-## Client and api definitions :
+This fork is published on [GitHub Packages](https://github.com/qtmleap/zodios/pkgs/npm/zodios) as `@qtmleap/zodios`. Point the `@qtmleap` scope at the GitHub Packages registry in your `.npmrc` (a `GITHUB_TOKEN` with `read:packages` is required, even for public packages):
+
+```ini
+@qtmleap:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
+Then install:
 
 ```bash
-> npm install @zodios/core
+> npm install @qtmleap/zodios
 ```
 
 or
 
 ```bash
-> yarn add @zodios/core
-```
-
-## Server :
-  
-```bash
-> npm install @zodios/core @zodios/express
-```
-
-or
-
-```bash
-> yarn add @zodios/core @zodios/express
+> yarn add @qtmleap/zodios
 ```
 
 # How to use it on client side ?
@@ -132,7 +127,7 @@ For an almost complete example on how to use zodios and how to split your APIs d
 Here is an example of API declaration with Zodios.
   
 ```typescript
-import { Zodios } from "@zodios/core";
+import { Zodios } from "@qtmleap/zodios";
 import { z } from "zod";
 
 const apiClient = new Zodios(
