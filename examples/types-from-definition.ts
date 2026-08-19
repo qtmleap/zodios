@@ -1,20 +1,20 @@
+import z from 'zod'
 import {
-  ZodiosResponseByPath,
-  ZodiosBodyByPath,
-  ZodiosPathParamsByPath,
-  ZodiosQueryParamsByPath,
   makeApi,
-  ZodiosPathParamByAlias,
   makeErrors,
-} from "../src/index";
-import z from "zod";
+  type ZodiosBodyByPath,
+  type ZodiosPathParamByAlias,
+  type ZodiosPathParamsByPath,
+  type ZodiosQueryParamsByPath,
+  type ZodiosResponseByPath,
+} from '../src/index'
 
 const user = z.object({
   id: z.number(),
   name: z.string(),
   email: z.string().email(),
   phone: z.string(),
-});
+})
 
 const errors = makeErrors([
   {
@@ -33,25 +33,25 @@ const errors = makeErrors([
     status: 500,
     schema: z.object({
       message: z.string(),
-      cause: z.record(z.string()),
+      cause: z.record(z.string(), z.string()),
     }),
   },
-]);
+])
 
 const api = makeApi([
   {
-    path: "/users",
-    method: "get",
+    path: '/users',
+    method: 'get',
     response: z.array(user),
   },
   {
-    path: "/users/:id",
-    method: "get",
-    alias: "getUser",
+    path: '/users/:id',
+    method: 'get',
+    alias: 'getUser',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.number().positive(),
       },
     ],
@@ -59,70 +59,70 @@ const api = makeApi([
     errors,
   },
   {
-    path: "/users",
-    method: "post",
+    path: '/users',
+    method: 'post',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: user,
       },
     ],
     response: user,
   },
   {
-    path: "/users/:id",
-    method: "put",
+    path: '/users/:id',
+    method: 'put',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: user,
       },
     ],
     response: user,
   },
   {
-    path: "/users/:id",
-    method: "patch",
+    path: '/users/:id',
+    method: 'patch',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: user,
       },
     ],
     response: user,
   },
   {
-    path: "/users/:id",
-    method: "delete",
+    path: '/users/:id',
+    method: 'delete',
     response: z.object({}),
   },
-]);
+])
 
-type User = z.infer<typeof user>;
-type Api = typeof api;
+type User = z.infer<typeof user>
+type Api = typeof api
 
-type Users = ZodiosResponseByPath<Api, "get", "/users">;
+type Users = ZodiosResponseByPath<Api, 'get', '/users'>
 //    ^?
-type UserById = ZodiosResponseByPath<Api, "get", "/users/:id">;
+type UserById = ZodiosResponseByPath<Api, 'get', '/users/:id'>
 //    ^?
-type GetUserParams = ZodiosPathParamsByPath<Api, "get", "/users/:id">;
+type GetUserParams = ZodiosPathParamsByPath<Api, 'get', '/users/:id'>
 //    ^?
-type GetUserParamsByAlias = ZodiosPathParamByAlias<Api, "getUser">;
+type GetUserParamsByAlias = ZodiosPathParamByAlias<Api, 'getUser'>
 //    ^?
-type GetUsersParams = ZodiosPathParamsByPath<Api, "get", "/users">;
+type GetUsersParams = ZodiosPathParamsByPath<Api, 'get', '/users'>
 //    ^?
-type GetUserQueries = ZodiosQueryParamsByPath<Api, "get", "/users/:id">;
+type GetUserQueries = ZodiosQueryParamsByPath<Api, 'get', '/users/:id'>
 //    ^?
-type CreateUserBody = ZodiosBodyByPath<Api, "post", "/users">;
+type CreateUserBody = ZodiosBodyByPath<Api, 'post', '/users'>
 //    ^?
-type CreateUserResponse = ZodiosResponseByPath<Api, "post", "/users">;
+type CreateUserResponse = ZodiosResponseByPath<Api, 'post', '/users'>
 //    ^?
-type UpdateUserBody = ZodiosBodyByPath<Api, "put", "/users/:id">;
+type UpdateUserBody = ZodiosBodyByPath<Api, 'put', '/users/:id'>
 //    ^?
-type PatchUserBody = ZodiosBodyByPath<Api, "patch", "/users/:id">;
+type PatchUserBody = ZodiosBodyByPath<Api, 'patch', '/users/:id'>
 //    ^?
-type DeleteUserResponse = ZodiosResponseByPath<Api, "delete", "/users/:id">;
+type DeleteUserResponse = ZodiosResponseByPath<Api, 'delete', '/users/:id'>
 //    ^?
