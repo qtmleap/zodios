@@ -1,7 +1,7 @@
 {
   "name": "@qtmleap/zodios",
   "description": "Typescript API client with autocompletion and zod validations",
-  "version": "11.0.0-rc.0",
+  "version": "11.0.0",
   "type": "module",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
