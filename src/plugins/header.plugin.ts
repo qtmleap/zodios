@@ -1,4 +1,4 @@
-import type { ZodiosPlugin } from "../zodios.types";
+import type { ZodiosPlugin } from '../zodios.types'
 
 export function headerPlugin(key: string, value: string): ZodiosPlugin {
   return {
@@ -9,7 +9,7 @@ export function headerPlugin(key: string, value: string): ZodiosPlugin {
           ...config.headers,
           [key]: value,
         },
-      };
+      }
     },
-  };
+  }
 }

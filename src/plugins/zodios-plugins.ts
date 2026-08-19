@@ -1,31 +1,31 @@
-import { AxiosResponse } from "axios";
-import { ReadonlyDeep } from "../utils.types";
-import {
+import type { ReadonlyDeep } from '../utils.types'
+import type {
   AnyZodiosRequestOptions,
   Method,
   ZodiosEndpointDefinitions,
   ZodiosPlugin,
-} from "../zodios.types";
+  ZodiosResponse,
+} from '../zodios.types'
 
 export type PluginId = {
-  key: string;
-  value: number;
-};
+  key: string
+  value: number
+}
 
 /**
  * A list of plugins that can be used by the Zodios client.
  */
 export class ZodiosPlugins {
-  public readonly key: string;
-  private plugins: Array<ZodiosPlugin | undefined> = [];
+  public readonly key: string
+  private plugins: Array<ZodiosPlugin | undefined> = []
 
   /**
    * Constructor
    * @param method - http method of the endpoint where the plugins are registered
    * @param path - path of the endpoint where the plugins are registered
    */
-  constructor(method: Method | "any", path: string) {
-    this.key = `${method}-${path}`;
+  constructor(method: Method | 'any', path: string) {
+    this.key = `${method}-${path}`
   }
 
   /**
@@ -34,7 +34,7 @@ export class ZodiosPlugins {
    * @returns the index of the plugin if found, -1 otherwise
    */
   indexOf(name: string) {
-    return this.plugins.findIndex((p) => p?.name === name);
+    return this.plugins.findIndex((p) => p?.name === name)
   }
 
   /**
@@ -45,14 +45,14 @@ export class ZodiosPlugins {
    */
   use(plugin: ZodiosPlugin): PluginId {
     if (plugin.name) {
-      const id = this.indexOf(plugin.name);
+      const id = this.indexOf(plugin.name)
       if (id !== -1) {
-        this.plugins[id] = plugin;
-        return { key: this.key, value: id };
+        this.plugins[id] = plugin
+        return { key: this.key, value: id }
       }
     }
-    this.plugins.push(plugin);
-    return { key: this.key, value: this.plugins.length - 1 };
+    this.plugins.push(plugin)
+    return { key: this.key, value: this.plugins.length - 1 }
   }
 
   /**
@@ -60,19 +60,19 @@ export class ZodiosPlugins {
    * @param plugin - plugin to unregister
    */
   eject(plugin: PluginId | string) {
-    if (typeof plugin === "string") {
-      const id = this.indexOf(plugin);
+    if (typeof plugin === 'string') {
+      const id = this.indexOf(plugin)
       if (id === -1) {
-        throw new Error(`Plugin with name '${plugin}' not found`);
+        throw new Error(`Plugin with name '${plugin}' not found`)
       }
-      this.plugins[id] = undefined;
+      this.plugins[id] = undefined
     } else {
       if (plugin.key !== this.key) {
         throw new Error(
-          `Plugin with key '${plugin.key}' is not registered for endpoint '${this.key}'`
-        );
+          `Plugin with key '${plugin.key}' is not registered for endpoint '${this.key}'`,
+        )
       }
-      this.plugins[plugin.value] = undefined;
+      this.plugins[plugin.value] = undefined
     }
   }
 
@@ -84,15 +84,15 @@ export class ZodiosPlugins {
    */
   async interceptRequest(
     api: ZodiosEndpointDefinitions,
-    config: ReadonlyDeep<AnyZodiosRequestOptions>
+    config: ReadonlyDeep<AnyZodiosRequestOptions>,
   ) {
-    let pluginConfig = config;
+    let pluginConfig = config
     for (const plugin of this.plugins) {
       if (plugin?.request) {
-        pluginConfig = await plugin.request(api, pluginConfig);
+        pluginConfig = await plugin.request(api, pluginConfig)
       }
     }
-    return pluginConfig;
+    return pluginConfig
   }
 
   /**
@@ -105,21 +105,19 @@ export class ZodiosPlugins {
   async interceptResponse(
     api: ZodiosEndpointDefinitions,
     config: ReadonlyDeep<AnyZodiosRequestOptions>,
-    response: Promise<AxiosResponse>
+    response: Promise<ZodiosResponse>,
   ) {
-    let pluginResponse = response;
+    let pluginResponse = response
     for (let index = this.plugins.length - 1; index >= 0; index--) {
-      const plugin = this.plugins[index];
+      const plugin = this.plugins[index]
       if (plugin) {
         pluginResponse = pluginResponse.then(
-          plugin?.response
-            ? (res) => plugin.response!(api, config, res)
-            : undefined,
-          plugin?.error ? (err) => plugin.error!(api, config, err) : undefined
-        );
+          plugin?.response ? (res) => plugin.response!(api, config, res) : undefined,
+          plugin?.error ? (err) => plugin.error!(api, config, err) : undefined,
+        )
       }
     }
-    return pluginResponse;
+    return pluginResponse
   }
 
   /**
@@ -127,9 +125,6 @@ export class ZodiosPlugins {
    * @returns the number of plugins registered
    */
   count() {
-    return this.plugins.reduce(
-      (count, plugin) => (plugin ? count + 1 : count),
-      0
-    );
+    return this.plugins.reduce((count, plugin) => (plugin ? count + 1 : count), 0)
   }
 }

@@ -1,360 +1,357 @@
-import { AxiosError } from "axios";
-import express from "express";
-import { AddressInfo } from "net";
-import { z, ZodError } from "zod";
-globalThis.FormData = require("form-data");
-import { Zodios } from "./zodios";
-import { ZodiosError } from "./zodios-error";
-import multer from "multer";
-import { ZodiosPlugin } from "./zodios.types";
-import { apiBuilder } from "./api";
-import { isErrorFromPath, isErrorFromAlias } from "./zodios-error.utils";
-import { Assert } from "./utils.types";
+import express from 'express'
+import multer from 'multer'
+import type { AddressInfo } from 'net'
+import { ZodError, z } from 'zod'
+import { apiBuilder } from './api'
+import type { Assert } from './utils.types'
+import { Zodios } from './zodios'
+import type { ZodiosPlugin } from './zodios.types'
+import { ZodiosError, ZodiosResponseError } from './zodios-error'
+import { isErrorFromAlias, isErrorFromPath } from './zodios-error.utils'
 
-const multipart = multer({ storage: multer.memoryStorage() });
+const multipart = multer({ storage: multer.memoryStorage() })
 
-describe("Zodios", () => {
-  let app: express.Express;
-  let server: ReturnType<typeof app.listen>;
-  let port: number;
+describe('Zodios', () => {
+  let app: express.Express
+  let server: ReturnType<typeof app.listen>
+  let port: number
 
   beforeAll(async () => {
-    app = express();
-    app.use(express.json());
-    app.get("/token", (req, res) => {
-      res.status(200).json({ token: req.headers.authorization });
-    });
-    app.post("/token", (req, res) => {
-      res.status(200).json({ token: req.headers.authorization });
-    });
-    app.get("/error401", (req, res) => {
-      res.status(401).json({});
-    });
-    app.get("/error//error401", (req, res) => {
-      res.status(401).json({});
-    });
-    app.get("/error/:id/error401", (req, res) => {
-      res.status(401).json({});
-    });
-    app.get("/error502", (req, res) => {
-      res.status(502).json({ error: { message: "bad gateway" } });
-    });
-    app.get("/queries", (req, res) => {
+    app = express()
+    app.use(express.json())
+    app.get('/token', (req, res) => {
+      res.status(200).json({ token: req.headers.authorization })
+    })
+    app.post('/token', (req, res) => {
+      res.status(200).json({ token: req.headers.authorization })
+    })
+    app.get('/error401', (req, res) => {
+      res.status(401).json({})
+    })
+    app.get('/error//error401', (req, res) => {
+      res.status(401).json({})
+    })
+    app.get('/error/:id/error401', (req, res) => {
+      res.status(401).json({})
+    })
+    app.get('/error502', (req, res) => {
+      res.status(502).json({ error: { message: 'bad gateway' } })
+    })
+    app.get('/queries', (req, res) => {
       res.status(200).json({
         queries: req.query.id,
-      });
-    });
-    app.get("/:id", (req, res) => {
-      res.status(200).json({ id: Number(req.params.id), name: "test" });
-    });
-    app.get("/path/:uuid", (req, res) => {
-      res.status(200).json({ uuid: req.params.uuid });
-    });
-    app.get("/:id/address/:address", (req, res) => {
-      res
-        .status(200)
-        .json({ id: Number(req.params.id), address: req.params.address });
-    });
-    app.post("/", (req, res) => {
-      res.status(200).json({ id: 3, name: req.body.name });
-    });
-    app.put("/", (req, res) => {
-      res.status(200).json({ id: req.body.id, name: req.body.name });
-    });
-    app.patch("/", (req, res) => {
-      res.status(200).json({ id: req.body.id, name: req.body.name });
-    });
-    app.delete("/:id", (req, res) => {
-      res.status(200).json({ id: Number(req.params.id) });
-    });
-    app.post("/form-data", multipart.none() as any, (req, res) => {
-      res.status(200).json(req.body);
-    });
-    app.post(
-      "/form-url",
-      express.urlencoded({ extended: false }),
-      (req, res) => {
-        res.status(200).json(req.body);
-      }
-    );
-    app.post("/text", express.text(), (req, res) => {
-      res.status(200).send(req.body);
-    });
-    server = app.listen(0);
-    port = (server.address() as AddressInfo).port;
-  });
+      })
+    })
+    app.get('/:id', (req, res) => {
+      res.status(200).json({ id: Number(req.params.id), name: 'test' })
+    })
+    app.get('/path/:uuid', (req, res) => {
+      res.status(200).json({ uuid: req.params.uuid })
+    })
+    app.get('/:id/address/:address', (req, res) => {
+      res.status(200).json({ id: Number(req.params.id), address: req.params.address })
+    })
+    app.post('/', (req, res) => {
+      res.status(200).json({ id: 3, name: req.body.name })
+    })
+    app.put('/', (req, res) => {
+      res.status(200).json({ id: req.body.id, name: req.body.name })
+    })
+    app.patch('/', (req, res) => {
+      res.status(200).json({ id: req.body.id, name: req.body.name })
+    })
+    app.delete('/:id', (req, res) => {
+      res.status(200).json({ id: Number(req.params.id) })
+    })
+    app.post('/form-data', multipart.none() as any, (req, res) => {
+      res.status(200).json(req.body)
+    })
+    app.post('/form-url', express.urlencoded({ extended: false }), (req, res) => {
+      res.status(200).json(req.body)
+    })
+    app.post('/text', express.text(), (req, res) => {
+      res.status(200).type('text/plain').send(req.body)
+    })
+    server = app.listen(0)
+    port = (server.address() as AddressInfo).port
+  })
 
   afterAll(() => {
-    server.close();
-  });
+    server.close()
+  })
 
-  it("should be defined", () => {
-    expect(Zodios).toBeDefined();
-  });
+  it('should be defined', () => {
+    expect(Zodios).toBeDefined()
+  })
 
-  it("should throw if baseUrl is not provided", () => {
-    // @ts-ignore
-    expect(() => new Zodios(undefined, [])).toThrowError(
-      "Zodios: missing base url"
-    );
-  });
+  it('should throw if baseUrl is not provided', () => {
+    // @ts-expect-error
+    expect(() => new Zodios(undefined, [])).toThrowError('Zodios: missing base url')
+  })
 
-  it("should throw if api is not provided", () => {
-    // @ts-ignore
-    expect(() => new Zodios()).toThrowError("Zodios: missing api description");
-  });
+  it('should throw if api is not provided', () => {
+    // @ts-expect-error
+    expect(() => new Zodios()).toThrowError('Zodios: missing api description')
+  })
 
-  it("should throw if api is not an array", () => {
-    // @ts-ignore
-    expect(() => new Zodios({})).toThrowError("Zodios: api must be an array");
-  });
+  it('should throw if api is not an array', () => {
+    // @ts-expect-error
+    expect(() => new Zodios({})).toThrowError('Zodios: api must be an array')
+  })
 
-  it("should return the underlying axios instance", () => {
-    const zodios = new Zodios(`http://localhost:${port}`, []);
-    expect(zodios.axios).toBeDefined();
-  });
-  it("should create a new instance of Zodios", () => {
-    const zodios = new Zodios(`http://localhost:${port}`, []);
-    expect(zodios).toBeDefined();
-  });
-  it("should create a new instance when providing an api", () => {
+  it('should use the injected fetch implementation', async () => {
+    const fetchSpy = vi.fn(globalThis.fetch)
+    const zodios = new Zodios(
+      `http://localhost:${port}`,
+      [
+        {
+          method: 'get',
+          path: '/token',
+          response: z.object({ token: z.string().nullish() }),
+        },
+      ],
+      { fetch: fetchSpy },
+    )
+    await zodios.get('/token', { headers: { Authorization: 'Bearer test' } })
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+  })
+  it('should create a new instance of Zodios', () => {
+    const zodios = new Zodios(`http://localhost:${port}`, [])
+    expect(zodios).toBeDefined()
+  })
+  it('should create a new instance when providing an api', () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        path: "/:id",
+        method: 'get',
+        path: '/:id',
         response: z.object({
           id: z.number(),
           name: z.string(),
         }),
       },
-    ]);
-    expect(zodios).toBeDefined();
-  });
+    ])
+    expect(zodios).toBeDefined()
+  })
 
-  it("should should throw with duplicate api endpoints", () => {
+  it('should should throw with duplicate api endpoints', () => {
     expect(
       () =>
         new Zodios(`http://localhost:${port}`, [
           {
-            method: "get",
-            path: "/:id",
+            method: 'get',
+            path: '/:id',
             response: z.object({
               id: z.number(),
               name: z.string(),
             }),
           },
           {
-            method: "get",
-            path: "/:id",
+            method: 'get',
+            path: '/:id',
             response: z.object({
               id: z.number(),
               name: z.string(),
             }),
           },
-        ])
-    ).toThrowError("Zodios: Duplicate path 'get /:id'");
-  });
+        ]),
+    ).toThrowError("Zodios: Duplicate path 'get /:id'")
+  })
 
-  it("should get base url", () => {
-    const zodios = new Zodios(`http://localhost:${port}`, []);
-    expect(zodios.baseURL).toBe(`http://localhost:${port}`);
-  });
+  it('should get base url', () => {
+    const zodios = new Zodios(`http://localhost:${port}`, [])
+    expect(zodios.baseURL).toBe(`http://localhost:${port}`)
+  })
 
-  it("should create a new instance whithout base URL", () => {
+  it('should create a new instance whithout base URL', () => {
     const zodios = new Zodios([
       {
-        method: "get",
-        path: "/:id",
+        method: 'get',
+        path: '/:id',
         response: z.object({
           id: z.number(),
           name: z.string(),
         }),
       },
-    ]);
-    expect(zodios).toBeDefined();
-  });
+    ])
+    expect(zodios).toBeDefined()
+  })
 
-  it("should register have validation plugin automatically installed", () => {
-    const zodios = new Zodios(`http://localhost:${port}`, []);
-    // @ts-ignore
-    expect(zodios.endpointPlugins.get("any-any").count()).toBe(1);
-  });
+  it('should register have validation plugin automatically installed', () => {
+    const zodios = new Zodios(`http://localhost:${port}`, [])
+    // @ts-expect-error
+    expect(zodios.endpointPlugins.get('any-any').count()).toBe(1)
+  })
 
-  it("should register a plugin", () => {
-    const zodios = new Zodios(`http://localhost:${port}`, []);
+  it('should register a plugin', () => {
+    const zodios = new Zodios(`http://localhost:${port}`, [])
     zodios.use({
       request: async (_, config) => config,
-    });
-    // @ts-ignore
-    expect(zodios.endpointPlugins.get("any-any").count()).toBe(2);
-  });
+    })
+    // @ts-expect-error
+    expect(zodios.endpointPlugins.get('any-any').count()).toBe(2)
+  })
 
-  it("should unregister a plugin", () => {
-    const zodios = new Zodios(`http://localhost:${port}`, []);
+  it('should unregister a plugin', () => {
+    const zodios = new Zodios(`http://localhost:${port}`, [])
     const id = zodios.use({
       request: async (_, config) => config,
-    });
-    // @ts-ignore
-    expect(zodios.endpointPlugins.get("any-any").count()).toBe(2);
-    zodios.eject(id);
-    // @ts-ignore
-    expect(zodios.endpointPlugins.get("any-any").count()).toBe(1);
-  });
+    })
+    // @ts-expect-error
+    expect(zodios.endpointPlugins.get('any-any').count()).toBe(2)
+    zodios.eject(id)
+    // @ts-expect-error
+    expect(zodios.endpointPlugins.get('any-any').count()).toBe(1)
+  })
 
-  it("should replace a named plugin", () => {
-    const zodios = new Zodios(`http://localhost:${port}`, []);
+  it('should replace a named plugin', () => {
+    const zodios = new Zodios(`http://localhost:${port}`, [])
     const plugin: ZodiosPlugin = {
-      name: "test",
+      name: 'test',
       request: async (_, config) => config,
-    };
-    zodios.use(plugin);
-    zodios.use(plugin);
-    zodios.use(plugin);
-    // @ts-ignore
-    expect(zodios.endpointPlugins.get("any-any").count()).toBe(2);
-  });
+    }
+    zodios.use(plugin)
+    zodios.use(plugin)
+    zodios.use(plugin)
+    // @ts-expect-error
+    expect(zodios.endpointPlugins.get('any-any').count()).toBe(2)
+  })
 
-  it("should unregister a named plugin", () => {
-    const zodios = new Zodios(`http://localhost:${port}`, []);
+  it('should unregister a named plugin', () => {
+    const zodios = new Zodios(`http://localhost:${port}`, [])
     const plugin: ZodiosPlugin = {
-      name: "test",
+      name: 'test',
       request: async (_, config) => config,
-    };
-    zodios.use(plugin);
-    zodios.eject("test");
-    // @ts-ignore
-    expect(zodios.endpointPlugins.get("any-any").count()).toBe(1);
-  });
+    }
+    zodios.use(plugin)
+    zodios.eject('test')
+    // @ts-expect-error
+    expect(zodios.endpointPlugins.get('any-any').count()).toBe(1)
+  })
 
-  it("should throw if invalid parameters when registering a plugin", () => {
-    const zodios = new Zodios(`http://localhost:${port}`, []);
-    // @ts-ignore
-    expect(() => zodios.use(0)).toThrowError("Zodios: invalid plugin");
-  });
+  it('should throw if invalid parameters when registering a plugin', () => {
+    const zodios = new Zodios(`http://localhost:${port}`, [])
+    // @ts-expect-error
+    expect(() => zodios.use(0)).toThrowError('Zodios: invalid plugin')
+  })
 
-  it("should throw if invalid alias when registering a plugin", () => {
+  it('should throw if invalid alias when registering a plugin', () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        path: "/:id",
-        alias: "test",
+        method: 'get',
+        path: '/:id',
+        alias: 'test',
         response: z.object({
           id: z.number(),
           name: z.string(),
         }),
       },
-    ]);
+    ])
     expect(() =>
-      // @ts-ignore
-      zodios.use("tests", {
-        // @ts-ignore
+      // @ts-expect-error
+      zodios.use('tests', {
+        // @ts-expect-error
         request: async (_, config) => config,
-      })
-    ).toThrowError("Zodios: no alias 'tests' found to register plugin");
-  });
+      }),
+    ).toThrowError("Zodios: no alias 'tests' found to register plugin")
+  })
 
-  it("should throw if invalid endpoint when registering a plugin", () => {
+  it('should throw if invalid endpoint when registering a plugin', () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        path: "/:id",
+        method: 'get',
+        path: '/:id',
         response: z.object({
           id: z.number(),
           name: z.string(),
         }),
       },
-    ]);
+    ])
     expect(() =>
-      // @ts-ignore
-      zodios.use("get", "/test/:id", {
-        // @ts-ignore
+      // @ts-expect-error
+      zodios.use('get', '/test/:id', {
+        // @ts-expect-error
         request: async (_, config) => config,
-      })
-    ).toThrowError(
-      "Zodios: no endpoint 'get /test/:id' found to register plugin"
-    );
-  });
+      }),
+    ).toThrowError("Zodios: no endpoint 'get /test/:id' found to register plugin")
+  })
 
-  it("should register a plugin by endpoint", () => {
+  it('should register a plugin by endpoint', () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        path: "/:id",
+        method: 'get',
+        path: '/:id',
         response: z.object({
           id: z.number(),
           name: z.string(),
         }),
       },
-    ]);
-    zodios.use("get", "/:id", {
+    ])
+    zodios.use('get', '/:id', {
       request: async (_, config) => config,
-    });
-    // @ts-ignore
-    expect(zodios.endpointPlugins.get("get-/:id").count()).toBe(1);
-  });
+    })
+    // @ts-expect-error
+    expect(zodios.endpointPlugins.get('get-/:id').count()).toBe(1)
+  })
 
-  it("should register a plugin by alias", () => {
+  it('should register a plugin by alias', () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        path: "/:id",
-        alias: "test",
+        method: 'get',
+        path: '/:id',
+        alias: 'test',
         response: z.object({
           id: z.number(),
           name: z.string(),
         }),
       },
-    ]);
-    zodios.use("test", {
+    ])
+    zodios.use('test', {
       request: async (_, config) => config,
-    });
-    // @ts-ignore
-    expect(zodios.endpointPlugins.get("get-/:id").count()).toBe(1);
-  });
+    })
+    // @ts-expect-error
+    expect(zodios.endpointPlugins.get('get-/:id').count()).toBe(1)
+  })
 
-  it("should make an http request", async () => {
+  it('should make an http request', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        path: "/:id",
+        method: 'get',
+        path: '/:id',
         response: z.object({
           id: z.number(),
           name: z.string(),
         }),
       },
       {
-        method: "get",
-        path: "/users",
+        method: 'get',
+        path: '/users',
         response: z.array(
           z.object({
             id: z.number(),
             name: z.string(),
-          })
+          }),
         ),
       },
-    ]);
+    ])
     const response = await zodios.request({
       //      ^?
-      method: "get",
-      url: "/:id",
+      method: 'get',
+      url: '/:id',
       params: { id: 7 },
-    });
-    const testResonseType: Assert<
-      typeof response,
-      { id: number; name: string }
-    > = true;
-    expect(response).toEqual({ id: 7, name: "test" });
-  });
+    })
+    const testResonseType: Assert<typeof response, { id: number; name: string }> = true
+    expect(response).toEqual({ id: 7, name: 'test' })
+  })
 
-  it("should make an http get with standard query arrays", async () => {
+  it('should make an http get with standard query arrays', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        path: "/queries",
+        method: 'get',
+        path: '/queries',
         parameters: [
           {
-            name: "id",
-            type: "Query",
+            name: 'id',
+            type: 'Query',
             schema: z.array(z.number()),
           },
         ],
@@ -362,102 +359,102 @@ describe("Zodios", () => {
           queries: z.array(z.string()),
         }),
       },
-    ]);
-    const response = await zodios.get("/queries", { queries: { id: [1, 2] } });
-    expect(response).toEqual({ queries: ["1", "2"] });
-  });
+    ])
+    const response = await zodios.get('/queries', { queries: { id: [1, 2] } })
+    expect(response).toEqual({ queries: ['1', '2'] })
+  })
 
-  it("should make an http get with one path params", async () => {
+  it('should make an http get with one path params', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        path: "/:id",
+        method: 'get',
+        path: '/:id',
         response: z.object({
           id: z.number(),
           name: z.string(),
         }),
       },
-    ]);
-    const response = await zodios.get("/:id", { params: { id: 7 } });
-    expect(response).toEqual({ id: 7, name: "test" });
-  });
+    ])
+    const response = await zodios.get('/:id', { params: { id: 7 } })
+    expect(response).toEqual({ id: 7, name: 'test' })
+  })
 
-  it("should make an http alias request with one path params", async () => {
+  it('should make an http alias request with one path params', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        path: "/:id",
-        alias: "getById",
+        method: 'get',
+        path: '/:id',
+        alias: 'getById',
         response: z.object({
           id: z.number(),
           name: z.string(),
         }),
       },
-    ]);
-    const response = await zodios.getById({ params: { id: 7 } });
-    expect(response).toEqual({ id: 7, name: "test" });
-  });
+    ])
+    const response = await zodios.getById({ params: { id: 7 } })
+    expect(response).toEqual({ id: 7, name: 'test' })
+  })
 
-  it("should work with api builder", async () => {
+  it('should work with api builder', async () => {
     const api = apiBuilder({
-      method: "get",
-      path: "/:id",
-      alias: "getById",
+      method: 'get',
+      path: '/:id',
+      alias: 'getById',
       response: z.object({
         id: z.number(),
         name: z.string(),
       }),
-    }).build();
-    const zodios = new Zodios(`http://localhost:${port}`, api);
-    const response = await zodios.getById({ params: { id: 7 } });
-    expect(response).toEqual({ id: 7, name: "test" });
-  });
+    }).build()
+    const zodios = new Zodios(`http://localhost:${port}`, api)
+    const response = await zodios.getById({ params: { id: 7 } })
+    expect(response).toEqual({ id: 7, name: 'test' })
+  })
 
-  it("should make a get request with forgotten params and get back a zod error", async () => {
+  it('should make a get request with forgotten params and get back a zod error', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        path: "/:id",
+        method: 'get',
+        path: '/:id',
         response: z.object({
           id: z.number(),
           name: z.string(),
         }),
       },
-    ]);
+    ])
     try {
-      // @ts-ignore
-      await zodios.get("/:id");
+      // @ts-expect-error
+      await zodios.get('/:id')
     } catch (e) {
-      expect(e).toBeInstanceOf(ZodiosError);
+      expect(e).toBeInstanceOf(ZodiosError)
     }
-  });
+  })
 
-  it("should make an http get with multiples path params", async () => {
+  it('should make an http get with multiples path params', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        path: "/:id/address/:address",
+        method: 'get',
+        path: '/:id/address/:address',
         response: z.object({
           id: z.number(),
           address: z.string(),
         }),
       },
-    ]);
-    const response = await zodios.get("/:id/address/:address", {
-      params: { id: 7, address: "address" },
-    });
-    expect(response).toEqual({ id: 7, address: "address" });
-  });
+    ])
+    const response = await zodios.get('/:id/address/:address', {
+      params: { id: 7, address: 'address' },
+    })
+    expect(response).toEqual({ id: 7, address: 'address' })
+  })
 
-  it("should make an http post with body param", async () => {
+  it('should make an http post with body param', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "post",
-        path: "/",
+        method: 'post',
+        path: '/',
         parameters: [
           {
-            name: "name",
-            type: "Body",
+            name: 'name',
+            type: 'Body',
             schema: z.object({
               name: z.string(),
             }),
@@ -468,27 +465,69 @@ describe("Zodios", () => {
           name: z.string(),
         }),
       },
-    ]);
-    const response = await zodios.post("/", { name: "post" });
-    expect(response).toEqual({ id: 3, name: "post" });
-  });
+    ])
+    const response = await zodios.post('/', { name: 'post' })
+    expect(response).toEqual({ id: 3, name: 'post' })
+  })
 
-  it("should make an http post with transformed body param", async () => {
+  it('should make an http post with transformed body param', async () => {
+    const zodios = new Zodios(
+      `http://localhost:${port}`,
+      [
+        {
+          method: 'post',
+          path: '/',
+          parameters: [
+            {
+              name: 'name',
+              type: 'Body',
+              schema: z
+                .object({
+                  firstname: z.string(),
+                  lastname: z.string(),
+                })
+                .transform((data) => ({
+                  name: `${data.firstname} ${data.lastname}`,
+                })),
+            },
+          ],
+          response: z.object({
+            id: z.number(),
+            name: z.string(),
+          }),
+        },
+      ],
+      { transform: true },
+    )
+    const config = {
+      method: 'post',
+      url: '/',
+      data: { firstname: 'post', lastname: 'test' },
+    } as const
+    const response = await zodios.request(config)
+    expect(config).toEqual({
+      method: 'post',
+      url: '/',
+      data: { firstname: 'post', lastname: 'test' },
+    })
+    expect(response).toEqual({ id: 3, name: 'post test' })
+  })
+
+  it('should not transform the body param by default', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "post",
-        path: "/",
+        method: 'post',
+        path: '/',
         parameters: [
           {
-            name: "name",
-            type: "Body",
+            name: 'name',
+            type: 'Body',
             schema: z
               .object({
-                firstname: z.string(),
-                lastname: z.string(),
+                name: z.string(),
               })
               .transform((data) => ({
-                name: `${data.firstname} ${data.lastname}`,
+                name: `${data.name} transformed`,
               })),
           },
         ],
@@ -497,36 +536,26 @@ describe("Zodios", () => {
           name: z.string(),
         }),
       },
-    ]);
-    const config = {
-      method: "post",
-      url: "/",
-      data: { firstname: "post", lastname: "test" },
-    } as const;
-    const response = await zodios.request(config);
-    expect(config).toEqual({
-      method: "post",
-      url: "/",
-      data: { firstname: "post", lastname: "test" },
-    });
-    expect(response).toEqual({ id: 3, name: "post test" });
-  });
+    ])
+    const response = await zodios.post('/', { name: 'post' })
+    expect(response).toEqual({ id: 3, name: 'post' })
+  })
 
-  it("should throw a zodios error if params are not correct", async () => {
+  it('should throw a zodios error if params are not correct', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "post",
-        path: "/",
+        method: 'post',
+        path: '/',
         parameters: [
           {
-            name: "name",
-            type: "Body",
+            name: 'name',
+            type: 'Body',
             schema: z
               .object({
                 email: z.string().email(),
               })
               .transform((data) => ({
-                name: `${data.email.split("@")[0]}`,
+                name: `${data.email.split('@')[0]}`,
               })),
           },
         ],
@@ -535,32 +564,32 @@ describe("Zodios", () => {
           name: z.string(),
         }),
       },
-    ]);
-    let response;
-    let error: ZodiosError | undefined;
+    ])
+    let response: unknown
+    let error: ZodiosError | undefined
     try {
-      response = await zodios.post("/", {
-        email: "post",
-      });
+      response = await zodios.post('/', {
+        email: 'post',
+      })
     } catch (err) {
-      error = err as ZodiosError;
+      error = err as ZodiosError
     }
-    expect(response).toBeUndefined();
-    expect(error).toBeInstanceOf(ZodiosError);
-    expect(error!.cause).toBeInstanceOf(ZodError);
-    expect(error!.message).toBe("Zodios: Invalid Body parameter 'name'");
-  });
+    expect(response).toBeUndefined()
+    expect(error).toBeInstanceOf(ZodiosError)
+    expect(error!.cause).toBeInstanceOf(ZodError)
+    expect(error!.message).toBe("Zodios: Invalid Body parameter 'name'")
+  })
 
-  it("should make an http mutation alias request with body param", async () => {
+  it('should make an http mutation alias request with body param', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "post",
-        path: "/",
-        alias: "create",
+        method: 'post',
+        path: '/',
+        alias: 'create',
         parameters: [
           {
-            name: "name",
-            type: "Body",
+            name: 'name',
+            type: 'Body',
             schema: z.object({
               name: z.string(),
             }),
@@ -571,46 +600,20 @@ describe("Zodios", () => {
           name: z.string(),
         }),
       },
-    ]);
-    const response = await zodios.create({ name: "post" });
-    expect(response).toEqual({ id: 3, name: "post" });
-  });
+    ])
+    const response = await zodios.create({ name: 'post' })
+    expect(response).toEqual({ id: 3, name: 'post' })
+  })
 
-  it("should make an http put", async () => {
+  it('should make an http put', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "put",
-        path: "/",
+        method: 'put',
+        path: '/',
         parameters: [
           {
-            name: "body",
-            type: "Body",
-            schema: z.object({
-              id: z.number(),
-              name: z.string(),
-            }),
-          },
-        ],
-        response: z.object({
-          id: z.number(),
-          name: z.string(),
-        }),
-      },
-    ]);
-    const response = await zodios.put("/", { id: 5, name: "put" });
-    expect(response).toEqual({ id: 5, name: "put" });
-  });
-
-  it("should make an http put alias", async () => {
-    const zodios = new Zodios(`http://localhost:${port}`, [
-      {
-        method: "put",
-        path: "/",
-        alias: "update",
-        parameters: [
-          {
-            name: "body",
-            type: "Body",
+            name: 'body',
+            type: 'Body',
             schema: z.object({
               id: z.number(),
               name: z.string(),
@@ -622,20 +625,21 @@ describe("Zodios", () => {
           name: z.string(),
         }),
       },
-    ]);
-    const response = await zodios.update({ id: 5, name: "put" });
-    expect(response).toEqual({ id: 5, name: "put" });
-  });
+    ])
+    const response = await zodios.put('/', { id: 5, name: 'put' })
+    expect(response).toEqual({ id: 5, name: 'put' })
+  })
 
-  it("should make an http patch", async () => {
+  it('should make an http put alias', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "patch",
-        path: "/",
+        method: 'put',
+        path: '/',
+        alias: 'update',
         parameters: [
           {
-            name: "id",
-            type: "Body",
+            name: 'body',
+            type: 'Body',
             schema: z.object({
               id: z.number(),
               name: z.string(),
@@ -647,21 +651,20 @@ describe("Zodios", () => {
           name: z.string(),
         }),
       },
-    ]);
-    const response = await zodios.patch("/", { id: 4, name: "patch" });
-    expect(response).toEqual({ id: 4, name: "patch" });
-  });
+    ])
+    const response = await zodios.update({ id: 5, name: 'put' })
+    expect(response).toEqual({ id: 5, name: 'put' })
+  })
 
-  it("should make an http patch alias", async () => {
+  it('should make an http patch', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "patch",
-        path: "/",
-        alias: "update",
+        method: 'patch',
+        path: '/',
         parameters: [
           {
-            name: "id",
-            type: "Body",
+            name: 'id',
+            type: 'Body',
             schema: z.object({
               id: z.number(),
               name: z.string(),
@@ -673,53 +676,79 @@ describe("Zodios", () => {
           name: z.string(),
         }),
       },
-    ]);
-    const response = await zodios.update({ id: 4, name: "patch" });
-    expect(response).toEqual({ id: 4, name: "patch" });
-  });
+    ])
+    const response = await zodios.patch('/', { id: 4, name: 'patch' })
+    expect(response).toEqual({ id: 4, name: 'patch' })
+  })
 
-  it("should make an http delete", async () => {
+  it('should make an http patch alias', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "delete",
-        path: "/:id",
+        method: 'patch',
+        path: '/',
+        alias: 'update',
+        parameters: [
+          {
+            name: 'id',
+            type: 'Body',
+            schema: z.object({
+              id: z.number(),
+              name: z.string(),
+            }),
+          },
+        ],
+        response: z.object({
+          id: z.number(),
+          name: z.string(),
+        }),
+      },
+    ])
+    const response = await zodios.update({ id: 4, name: 'patch' })
+    expect(response).toEqual({ id: 4, name: 'patch' })
+  })
+
+  it('should make an http delete', async () => {
+    const zodios = new Zodios(`http://localhost:${port}`, [
+      {
+        method: 'delete',
+        path: '/:id',
         response: z.object({
           id: z.number(),
         }),
       },
-    ]);
-    const response = await zodios.delete("/:id", undefined, {
+    ])
+    const response = await zodios.delete('/:id', undefined, {
       params: { id: 6 },
-    });
-    expect(response).toEqual({ id: 6 });
-  });
+    })
+    expect(response).toEqual({ id: 6 })
+  })
 
-  it("should make an http delete alias", async () => {
+  it('should make an http delete alias', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "delete",
-        path: "/:id",
-        alias: "remove",
+        method: 'delete',
+        path: '/:id',
+        alias: 'remove',
         response: z.object({
           id: z.number(),
         }),
       },
-    ]);
+    ])
     const response = await zodios.remove(undefined, {
       params: { id: 6 },
-    });
-    expect(response).toEqual({ id: 6 });
-  });
+    })
+    expect(response).toEqual({ id: 6 })
+  })
 
-  it("should validate uuid in path params", async () => {
+  it('should validate uuid in path params', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        path: "/path/:uuid",
+        method: 'get',
+        path: '/path/:uuid',
         parameters: [
           {
-            name: "uuid",
-            type: "Path",
+            name: 'uuid',
+            type: 'Path',
             schema: z.string().uuid(),
           },
         ],
@@ -727,24 +756,24 @@ describe("Zodios", () => {
           uuid: z.string(),
         }),
       },
-    ]);
-    const response = await zodios.get("/path/:uuid", {
-      params: { uuid: "e9e09a1d-3967-4518-bc89-75a901aee128" },
-    });
+    ])
+    const response = await zodios.get('/path/:uuid', {
+      params: { uuid: 'e9e09a1d-3967-4518-bc89-75a901aee128' },
+    })
     expect(response).toEqual({
-      uuid: "e9e09a1d-3967-4518-bc89-75a901aee128",
-    });
-  });
+      uuid: 'e9e09a1d-3967-4518-bc89-75a901aee128',
+    })
+  })
 
-  it("should not validate bad path params", async () => {
+  it('should not validate bad path params', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        path: "/path/:uuid",
+        method: 'get',
+        path: '/path/:uuid',
         parameters: [
           {
-            name: "uuid",
-            type: "Path",
+            name: 'uuid',
+            type: 'Path',
             schema: z.string().uuid(),
           },
         ],
@@ -752,77 +781,65 @@ describe("Zodios", () => {
           uuid: z.string(),
         }),
       },
-    ]);
-    let error;
+    ])
+    let error: unknown
     try {
-      await zodios.get("/path/:uuid", {
-        params: { uuid: "e9e09a1-3967-4518-bc89-75a901aee128" },
-      });
+      await zodios.get('/path/:uuid', {
+        params: { uuid: 'e9e09a1-3967-4518-bc89-75a901aee128' },
+      })
     } catch (e) {
-      error = e;
+      error = e
     }
-    expect(error).toBeInstanceOf(ZodiosError);
-    expect((error as ZodiosError).cause).toBeInstanceOf(ZodError);
-    expect((error as ZodiosError).message).toBe(
-      "Zodios: Invalid Path parameter 'uuid'"
-    );
-  });
+    expect(error).toBeInstanceOf(ZodiosError)
+    expect((error as ZodiosError).cause).toBeInstanceOf(ZodError)
+    expect((error as ZodiosError).message).toBe("Zodios: Invalid Path parameter 'uuid'")
+  })
 
-  it("should not validate bad formatted responses", async () => {
+  it('should not validate bad formatted responses', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        path: "/:id",
+        method: 'get',
+        path: '/:id',
         response: z.object({
           id: z.number(),
           name: z.string(),
           more: z.string(),
         }),
       },
-    ]);
+    ])
     try {
-      await zodios.get("/:id", { params: { id: 1 } });
+      await zodios.get('/:id', { params: { id: 1 } })
     } catch (e) {
-      expect(e).toBeInstanceOf(ZodiosError);
-      expect((e as ZodiosError).cause).toBeInstanceOf(ZodError);
-      expect((e as ZodiosError).message)
-        .toBe(`Zodios: Invalid response from endpoint 'get /:id'
+      expect(e).toBeInstanceOf(ZodiosError)
+      expect((e as ZodiosError).cause).toBeInstanceOf(ZodError)
+      expect((e as ZodiosError).message).toBe(`Zodios: Invalid response from endpoint 'get /:id'
 status: 200 OK
 cause:
-[
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "undefined",
-    "path": [
-      "more"
-    ],
-    "message": "Required"
-  }
-]
+✖ Invalid input: expected string, received undefined
+  → at more
 received:
 {
   "id": 1,
   "name": "test"
-}`);
+}`)
       expect((e as ZodiosError).data).toEqual({
         id: 1,
-        name: "test",
-      });
+        name: 'test',
+      })
       expect((e as ZodiosError).config).toEqual({
-        method: "get",
-        url: "/:id",
+        method: 'get',
+        url: '/:id',
         params: { id: 1 },
-      });
+      })
     }
-  });
+  })
 
-  it("should match Expected error", async () => {
+  it('should match Expected error', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        alias: "getError502",
-        path: "/error502",
+        method: 'get',
+        alias: 'getError502',
+        path: '/error502',
         response: z.void(),
         errors: [
           {
@@ -844,7 +861,7 @@ received:
             }),
           },
           {
-            status: "default",
+            status: 'default',
             schema: z.object({
               error: z.object({
                 message: z.string(),
@@ -855,9 +872,9 @@ received:
         ],
       },
       {
-        method: "get",
-        alias: "getErrorById",
-        path: "/error502/:id",
+        method: 'get',
+        alias: 'getErrorById',
+        path: '/error502/:id',
         response: z.void(),
         errors: [
           {
@@ -879,66 +896,54 @@ received:
           },
         ],
       },
-    ]);
-    let error;
+    ])
+    let error: unknown
     try {
-      await zodios.get("/error502");
+      await zodios.get('/error502')
     } catch (e) {
-      error = e;
+      error = e
     }
-    expect(error).toBeInstanceOf(AxiosError);
-    expect((error as AxiosError).response?.status).toBe(502);
-    if (isErrorFromPath(zodios.api, "get", "/error502", error)) {
-      expect(error.response.status).toBe(502);
+    expect(error).toBeInstanceOf(ZodiosResponseError)
+    expect((error as ZodiosResponseError).response.status).toBe(502)
+    if (isErrorFromPath(zodios.api, 'get', '/error502', error)) {
+      expect(error.response.status).toBe(502)
       if (error.response.status === 502) {
-        const data = error.response.data;
-        const test: Assert<
-          typeof data,
-          { error: { message: string; _502: true } }
-        > = true;
+        const data = error.response.data
+        const test: Assert<typeof data, { error: { message: string; _502: true } }> = true
       }
       expect(error.response?.data).toEqual({
-        error: { message: "bad gateway" },
-      });
+        error: { message: 'bad gateway' },
+      })
     }
-    if (isErrorFromAlias(zodios.api, "getError502", error)) {
-      expect(error.response.status).toBe(502);
+    if (isErrorFromAlias(zodios.api, 'getError502', error)) {
+      expect(error.response.status).toBe(502)
       if (error.response.status === 502) {
-        const data = error.response.data;
+        const data = error.response.data
         //     ^?
-        const test: Assert<
-          typeof data,
-          { error: { message: string; _502: true } }
-        > = true;
+        const test: Assert<typeof data, { error: { message: string; _502: true } }> = true
       } else if (error.response.status === 401) {
-        const data = error.response.data;
+        const data = error.response.data
         //     ^?
-        const test: Assert<
-          typeof data,
-          { error: { message: string; _401: true } }
-        > = true;
+        const test: Assert<typeof data, { error: { message: string; _401: true } }> = true
       } else {
-        const testStatus = error.response.status;
+        const testStatus = error.response.status
         //        ^?
-        const data = error.response.data;
+        const data = error.response.data
         //     ^?
-        const test: Assert<
-          typeof data,
-          { error: { message: string; _default: true } }
-        > = true;
+        const test: Assert<typeof data, { error: { message: string; _default: true } }> = true
       }
       expect(error.response?.data).toEqual({
-        error: { message: "bad gateway" },
-      });
+        error: { message: 'bad gateway' },
+      })
     }
-  });
+  })
 
-  it("should match error with params", async () => {
+  it('should match error with params', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        alias: "getError401",
-        path: "/error/:id/error401",
+        method: 'get',
+        alias: 'getError401',
+        path: '/error/:id/error401',
         response: z.void(),
         errors: [
           {
@@ -948,9 +953,9 @@ received:
         ],
       },
       {
-        method: "get",
-        alias: "getError404",
-        path: "/error/:id/error404",
+        method: 'get',
+        alias: 'getError404',
+        path: '/error/:id/error404',
         response: z.void(),
         errors: [
           {
@@ -959,36 +964,32 @@ received:
           },
         ],
       },
-    ]);
+    ])
 
     const params = {
-      id: "test",
-    };
-
-    let error;
-    try {
-      await zodios.getError401({ params });
-    } catch (e) {
-      error = e;
+      id: 'test',
     }
 
-    expect(isErrorFromAlias(zodios.api, "getError401", error)).toBe(true);
-    expect(isErrorFromAlias(zodios.api, "getError404", error)).toBe(false);
+    let error: unknown
+    try {
+      await zodios.getError401({ params })
+    } catch (e) {
+      error = e
+    }
 
-    expect(
-      isErrorFromPath(zodios.api, "get", "/error/:id/error401", error)
-    ).toBe(true);
-    expect(
-      isErrorFromPath(zodios.api, "get", "/error/:id/error404", error)
-    ).toBe(false);
-  });
+    expect(isErrorFromAlias(zodios.api, 'getError401', error)).toBe(true)
+    expect(isErrorFromAlias(zodios.api, 'getError404', error)).toBe(false)
 
-  it("should match error with empty params", async () => {
+    expect(isErrorFromPath(zodios.api, 'get', '/error/:id/error401', error)).toBe(true)
+    expect(isErrorFromPath(zodios.api, 'get', '/error/:id/error404', error)).toBe(false)
+  })
+
+  it('should match error with empty params', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        alias: "getError401",
-        path: "/error/:id/error401",
+        method: 'get',
+        alias: 'getError401',
+        path: '/error/:id/error401',
         response: z.void(),
         errors: [
           {
@@ -998,9 +999,9 @@ received:
         ],
       },
       {
-        method: "get",
-        alias: "getError404",
-        path: "/error/:id/error404",
+        method: 'get',
+        alias: 'getError404',
+        path: '/error/:id/error404',
         response: z.void(),
         errors: [
           {
@@ -1009,36 +1010,32 @@ received:
           },
         ],
       },
-    ]);
+    ])
 
     const params = {
-      id: "",
-    };
-
-    let error;
-    try {
-      await zodios.getError401({ params });
-    } catch (e) {
-      error = e;
+      id: '',
     }
 
-    expect(isErrorFromAlias(zodios.api, "getError401", error)).toBe(true);
-    expect(isErrorFromAlias(zodios.api, "getError404", error)).toBe(false);
+    let error: unknown
+    try {
+      await zodios.getError401({ params })
+    } catch (e) {
+      error = e
+    }
 
-    expect(
-      isErrorFromPath(zodios.api, "get", "/error/:id/error401", error)
-    ).toBe(true);
-    expect(
-      isErrorFromPath(zodios.api, "get", "/error/:id/error404", error)
-    ).toBe(false);
-  });
+    expect(isErrorFromAlias(zodios.api, 'getError401', error)).toBe(true)
+    expect(isErrorFromAlias(zodios.api, 'getError404', error)).toBe(false)
 
-  it("should match error with optional params at the end", async () => {
+    expect(isErrorFromPath(zodios.api, 'get', '/error/:id/error401', error)).toBe(true)
+    expect(isErrorFromPath(zodios.api, 'get', '/error/:id/error404', error)).toBe(false)
+  })
+
+  it('should match error with optional params at the end', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        alias: "getError401",
-        path: "/error/:id/error401/:message",
+        method: 'get',
+        alias: 'getError401',
+        path: '/error/:id/error401/:message',
         response: z.void(),
         errors: [
           {
@@ -1048,9 +1045,9 @@ received:
         ],
       },
       {
-        method: "get",
-        alias: "getError404",
-        path: "/error/:id/error404/:message",
+        method: 'get',
+        alias: 'getError404',
+        path: '/error/:id/error404/:message',
         response: z.void(),
         errors: [
           {
@@ -1059,60 +1056,56 @@ received:
           },
         ],
       },
-    ]);
+    ])
 
     const params = {
-      id: "test",
-      message: "",
-    };
-
-    let error;
-    try {
-      await zodios.getError401({ params });
-    } catch (e) {
-      error = e;
+      id: 'test',
+      message: '',
     }
 
-    expect(isErrorFromAlias(zodios.api, "getError401", error)).toBe(true);
-    expect(isErrorFromAlias(zodios.api, "getError404", error)).toBe(false);
+    let error: unknown
+    try {
+      await zodios.getError401({ params })
+    } catch (e) {
+      error = e
+    }
 
-    expect(
-      isErrorFromPath(zodios.api, "get", "/error/:id/error401/:message", error)
-    ).toBe(true);
-    expect(
-      isErrorFromPath(zodios.api, "get", "/error/:id/error404/:message", error)
-    ).toBe(false);
-  });
+    expect(isErrorFromAlias(zodios.api, 'getError401', error)).toBe(true)
+    expect(isErrorFromAlias(zodios.api, 'getError404', error)).toBe(false)
 
-  it("should match Unexpected error", async () => {
+    expect(isErrorFromPath(zodios.api, 'get', '/error/:id/error401/:message', error)).toBe(true)
+    expect(isErrorFromPath(zodios.api, 'get', '/error/:id/error404/:message', error)).toBe(false)
+  })
+
+  it('should match Unexpected error', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        alias: "getError502",
-        path: "/error502",
+        method: 'get',
+        alias: 'getError502',
+        path: '/error502',
         response: z.void(),
       },
-    ]);
-    let error;
+    ])
+    let error: unknown
     try {
-      await zodios.get("/error502");
+      await zodios.get('/error502')
     } catch (e) {
-      error = e;
+      error = e
     }
 
-    expect(error).toBeInstanceOf(AxiosError);
-    expect((error as AxiosError).response?.status).toBe(502);
-    expect(isErrorFromPath(zodios.api, "get", "/error502", error)).toBe(false);
-    expect(isErrorFromAlias(zodios.api, "getError502", error)).toBe(false);
-  });
+    expect(error).toBeInstanceOf(ZodiosResponseError)
+    expect((error as ZodiosResponseError).response.status).toBe(502)
+    expect(isErrorFromPath(zodios.api, 'get', '/error502', error)).toBe(false)
+    expect(isErrorFromAlias(zodios.api, 'getError502', error)).toBe(false)
+  })
 
-  it("should return response when disabling validation", async () => {
+  it('should return response when disabling validation', async () => {
     const zodios = new Zodios(
       `http://localhost:${port}`,
       [
         {
-          method: "get",
-          path: "/:id",
+          method: 'get',
+          path: '/:id',
           response: z.object({
             id: z.number(),
             name: z.string(),
@@ -1120,47 +1113,47 @@ received:
           }),
         },
       ],
-      { validate: false }
-    );
-    const response = await zodios.get("/:id", { params: { id: 1 } });
+      { validate: false },
+    )
+    const response = await zodios.get('/:id', { params: { id: 1 } })
     expect(response).toEqual({
       id: 1,
-      name: "test",
-    });
-  });
+      name: 'test',
+    })
+  })
 
-  it("should trigger an axios error with error response", async () => {
+  it('should trigger a response error with error response', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "get",
-        path: "/error502",
+        method: 'get',
+        path: '/error502',
         response: z.object({
           id: z.number(),
           name: z.string(),
         }),
       },
-    ]);
+    ])
     try {
-      await zodios.get("/error502");
+      await zodios.get('/error502')
     } catch (e) {
-      expect((e as AxiosError).response?.data).toEqual({
+      expect((e as ZodiosResponseError).response.data).toEqual({
         error: {
-          message: "bad gateway",
+          message: 'bad gateway',
         },
-      });
+      })
     }
-  });
+  })
 
-  it("should send a form data request", async () => {
+  it('should send a form data request', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "post",
-        path: "/form-data",
-        requestFormat: "form-data",
+        method: 'post',
+        path: '/form-data',
+        requestFormat: 'form-data',
         parameters: [
           {
-            name: "body",
-            type: "Body",
+            name: 'body',
+            type: 'Body',
             schema: z.object({
               id: z.number(),
               name: z.string(),
@@ -1172,21 +1165,21 @@ received:
           name: z.string(),
         }),
       },
-    ]);
-    const response = await zodios.post("/form-data", { id: 4, name: "post" });
-    expect(response).toEqual({ id: "4", name: "post" });
-  });
+    ])
+    const response = await zodios.post('/form-data', { id: 4, name: 'post' })
+    expect(response).toEqual({ id: '4', name: 'post' })
+  })
 
-  it("should send a form data request a second time under 100 ms", async () => {
+  it('should send a form data request a second time under 100 ms', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "post",
-        path: "/form-data",
-        requestFormat: "form-data",
+        method: 'post',
+        path: '/form-data',
+        requestFormat: 'form-data',
         parameters: [
           {
-            name: "body",
-            type: "Body",
+            name: 'body',
+            type: 'Body',
             schema: z.object({
               id: z.number(),
               name: z.string(),
@@ -1198,51 +1191,51 @@ received:
           name: z.string(),
         }),
       },
-    ]);
-    const response = await zodios.post("/form-data", { id: 4, name: "post" });
-    expect(response).toEqual({ id: "4", name: "post" });
-  }, 100);
+    ])
+    const response = await zodios.post('/form-data', { id: 4, name: 'post' })
+    expect(response).toEqual({ id: '4', name: 'post' })
+  }, 100)
 
-  it("should not send an array as form data request", async () => {
+  it('should not send an array as form data request', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "post",
-        path: "/form-data",
-        requestFormat: "form-data",
+        method: 'post',
+        path: '/form-data',
+        requestFormat: 'form-data',
         parameters: [
           {
-            name: "body",
-            type: "Body",
+            name: 'body',
+            type: 'Body',
             schema: z.array(z.string()),
           },
         ],
         response: z.string(),
       },
-    ]);
-    let error: Error | undefined;
-    let response: string | undefined;
+    ])
+    let error: Error | undefined
+    let response: string | undefined
     try {
-      response = await zodios.post("/form-data", ["test", "test2"]);
+      response = await zodios.post('/form-data', ['test', 'test2'])
     } catch (err) {
-      error = err as Error;
+      error = err as Error
     }
-    expect(response).toBeUndefined();
-    expect(error).toBeInstanceOf(ZodiosError);
+    expect(response).toBeUndefined()
+    expect(error).toBeInstanceOf(ZodiosError)
     expect((error as ZodiosError).message).toBe(
-      "Zodios: multipart/form-data body must be an object"
-    );
-  });
+      'Zodios: multipart/form-data body must be an object',
+    )
+  })
 
-  it("should send a form url request", async () => {
+  it('should send a form url request', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "post",
-        path: "/form-url",
-        requestFormat: "form-url",
+        method: 'post',
+        path: '/form-url',
+        requestFormat: 'form-url',
         parameters: [
           {
-            name: "body",
-            type: "Body",
+            name: 'body',
+            type: 'Body',
             schema: z.object({
               id: z.number(),
               name: z.string(),
@@ -1254,58 +1247,58 @@ received:
           name: z.string(),
         }),
       },
-    ]);
-    const response = await zodios.post("/form-url", { id: 4, name: "post" });
-    expect(response).toEqual({ id: "4", name: "post" });
-  });
+    ])
+    const response = await zodios.post('/form-url', { id: 4, name: 'post' })
+    expect(response).toEqual({ id: '4', name: 'post' })
+  })
 
-  it("should not send an array as form url request", async () => {
+  it('should not send an array as form url request', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "post",
-        path: "/form-url",
-        requestFormat: "form-url",
+        method: 'post',
+        path: '/form-url',
+        requestFormat: 'form-url',
         parameters: [
           {
-            name: "body",
-            type: "Body",
+            name: 'body',
+            type: 'Body',
             schema: z.array(z.string()),
           },
         ],
         response: z.string(),
       },
-    ]);
-    let error: Error | undefined;
-    let response: string | undefined;
+    ])
+    let error: Error | undefined
+    let response: string | undefined
     try {
-      response = await zodios.post("/form-url", ["test", "test2"]);
+      response = await zodios.post('/form-url', ['test', 'test2'])
     } catch (err) {
-      error = err as Error;
+      error = err as Error
     }
-    expect(response).toBeUndefined();
-    expect(error).toBeInstanceOf(ZodiosError);
+    expect(response).toBeUndefined()
+    expect(error).toBeInstanceOf(ZodiosError)
     expect((error as ZodiosError).message).toBe(
-      "Zodios: application/x-www-form-urlencoded body must be an object"
-    );
-  });
+      'Zodios: application/x-www-form-urlencoded body must be an object',
+    )
+  })
 
-  it("should send a text request", async () => {
+  it('should send a text request', async () => {
     const zodios = new Zodios(`http://localhost:${port}`, [
       {
-        method: "post",
-        path: "/text",
-        requestFormat: "text",
+        method: 'post',
+        path: '/text',
+        requestFormat: 'text',
         parameters: [
           {
-            name: "body",
-            type: "Body",
+            name: 'body',
+            type: 'Body',
             schema: z.string(),
           },
         ],
         response: z.string(),
       },
-    ]);
-    const response = await zodios.post("/text", "test");
-    expect(response).toEqual("test");
-  });
-});
+    ])
+    const response = await zodios.post('/text', 'test')
+    expect(response).toEqual('test')
+  })
+})
