@@ -7,7 +7,7 @@ name: CI
 
 on:
   push:
-    branches: [master, develop]
+    branches: [master]
     paths:
       - src/**
       - bun.lock
